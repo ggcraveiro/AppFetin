@@ -1,0 +1,54 @@
+name: EcoMind
+description: none
+
+# Define se o projeto deve ser publicado no pub.dev. 
+# 'none' evita publicação acidental de apps privados.
+publish_to: 'none' # Por enquanto!
+
+# Versão do seu aplicativo.
+# 1.0.0 é a versão semântica, +1 é o número do build (importante para lojas).
+version: 0.0.1+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0' # Garante compatibilidade com as versões atuais do Dart
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Dependências essenciais recomendadas:
+  cupertino_icons: ^1.0.5
+  
+  # Gerenciamento de estado (Exemplo com Provider, muito comum para iniciantes)
+  provider: ^6.0.5
+  
+  # Para chamadas de API (HTTP)
+  http: ^1.1.0
+  
+  # Google Fonts para tipografia facilitada
+  google_fonts: ^5.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  # Lints ajudam a manter o código limpo e seguindo padrões
+  flutter_lints: ^3.0.0
+
+# Configurações específicas do Flutter
+flutter:
+  # Garante que o app use os ícones e estilos do Material Design 3
+  uses-material-design: true
+
+  # Seção de Assets: Remova o comentário para ativar imagens e fontes
+  # assets:
+  #   - assets/images/logo.png
+  #   - assets/data/config.json
+
+  # Exemplo de configuração de fontes personalizadas:
+  # fonts:
+  #   - family: MinhaFonteCustomizada
+  #     fonts:
+  #       - asset: assets/fonts/MinhaFonte-Regular.ttf
+  #       - asset: assets/fonts/MinhaFonte-Bold.ttf
+  #         weight: 700
