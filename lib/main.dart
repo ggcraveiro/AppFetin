@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'EcoMind',
       theme: ThemeData(primarySwatch: Colors.lightGreen),
-      home: const HomePage(), // Referência à sua primeira tela
+      home: HomePage(), // Referência à sua primeira tela
     );
   }
 }
