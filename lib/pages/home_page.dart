@@ -40,10 +40,10 @@ class _HomePageState extends State<HomePage> {
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
-          BottomNavigationBarItem(icon: Icon(Icons.nature), label: 'Tree'),
-          BottomNavigationBarItem(icon: Icon(Icons.attach_money), label: 'Incentives'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Mapa'),
+          BottomNavigationBarItem(icon: Icon(Icons.nature), label: 'Árvores'),
+          BottomNavigationBarItem(icon: Icon(Icons.attach_money), label: 'Incentivos'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Seu perfil'),
         ],
       ),
     );
