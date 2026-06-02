@@ -5,8 +5,27 @@ class Menu1Page extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Home Menu'),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text('Home Menu'),
+          const SizedBox(height: 80), // Space to position button below center
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            ),
+            onPressed: () {
+              // Add button action here
+            },
+            child: const Text(
+              'Home Menu Button',
+              style: TextStyle(color: Colors.white, fontSize: 16),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
