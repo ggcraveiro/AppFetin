@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'pages/home_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,7 +13,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'EcoMind',
       theme: ThemeData(primarySwatch: Colors.lightGreen),
-      home: const HomePage(), // Referência à sua primeira tela
+      home: const HomePage(),
     );
   }
 }
