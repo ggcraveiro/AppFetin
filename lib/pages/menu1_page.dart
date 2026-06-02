@@ -9,7 +9,7 @@ class Menu1Page extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text('Home Menu'),
+          const Text('Este é o menu principal do aplicativo EcoMind. Funcionalidades serão adicionadas aqui!'),
           const SizedBox(height: 80), // Space to position button below center
           ElevatedButton(
             style: ElevatedButton.styleFrom(
