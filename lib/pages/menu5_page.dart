@@ -6,7 +6,7 @@ class Menu5Page extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: Text('Profile Menu'),
+      child: Text('Este é o menu que conterá o perfil do usuário.'),
     );
   }
 }

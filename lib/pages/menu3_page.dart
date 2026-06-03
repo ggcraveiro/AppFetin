@@ -6,7 +6,7 @@ class Menu3Page extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: Text('Tree Menu'),
+      child: Text('Este é o menu que incluirá os tipos de árvores disponíveis.'),
     );
   }
 }

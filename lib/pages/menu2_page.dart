@@ -6,7 +6,7 @@ class Menu2Page extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: Text('Map Menu'),
+      child: Text('Este é o menu onde ficará o mapa com as árvores.'),
     );
   }
 }
