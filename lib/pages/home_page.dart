@@ -4,6 +4,9 @@ import 'menu2_page.dart';
 import 'menu3_page.dart';
 import 'menu4_page.dart';
 import 'menu5_page.dart';
+import 'settings_page.dart';
+import 'about_page.dart';
+import 'logout_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -34,26 +37,34 @@ class _HomePageState extends State<HomePage> {
               return [
                 const PopupMenuItem(
                   value: 'settings',
-                  child: Text('Configurações'),
+                  child: Text('Settings'),
                 ),
                 const PopupMenuItem(
                   value: 'about',
-                  child: Text('Sobre'),
+                  child: Text('About'),
                 ),
                 const PopupMenuItem(
                   value: 'logout',
-                  child: Text('Fazer logout'),
+                  child: Text('Logout'),
                 ),
               ];
             },
             onSelected: (String value) {
-              // Handle menu item selection
               if (value == 'settings') {
-                // Handle settings
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsPage()),
+                );
               } else if (value == 'about') {
-                // Handle about
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AboutPage()),
+                );
               } else if (value == 'logout') {
-                // Handle logout
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LogoutPage()),
+                );
               }
             },
           ),
