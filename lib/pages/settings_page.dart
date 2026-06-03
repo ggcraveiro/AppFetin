@@ -9,14 +9,14 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: const Text('Configurações'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           ListTile(
-            title: const Text('Notifications'),
-            subtitle: const Text('Gerenciar configurações de notificação'),
+            title: const Text('Notificações'),
+            subtitle: const Text('Ativar ou desativar as notificações'),
             trailing: Switch(
               value: true,
               onChanged: (bool value) {},
@@ -26,8 +26,8 @@ class SettingsPage extends StatelessWidget {
           Consumer<ThemeProvider>(
             builder: (context, themeProvider, child) {
               return ListTile(
-                title: const Text('Dark Mode'),
-                subtitle: const Text('Ativar modo escuro'),
+                title: const Text('Modo Escuro'),
+                subtitle: const Text('Ativar ou desativar o modo escuro'),
                 trailing: Switch(
                   value: themeProvider.isDarkMode,
                   onChanged: (bool value) {
@@ -39,13 +39,13 @@ class SettingsPage extends StatelessWidget {
           ),
           const Divider(),
           ListTile(
-            title: const Text('Language'),
+            title: const Text('Idioma'),
             subtitle: const Text('Selecione seu idioma'),
             onTap: () {},
           ),
           const Divider(),
           ListTile(
-            title: const Text('Privacy Policy'),
+            title: const Text('Política de Privacidade'),
             subtitle: const Text('Confira nossa política de privacidade'),
             onTap: () {},
           ),
