@@ -43,7 +43,6 @@ class MyApp extends StatelessWidget {
               ),
               listTileTheme: const ListTileThemeData(
                 textColor: Color(0xFFE0E0E0),
-                subtitleTextColor: Color(0xFFB0B0B0),
               ),
               dividerColor: const Color(0xFF333333),
             ),
