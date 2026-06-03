@@ -16,7 +16,7 @@ class LogoutPage extends StatelessWidget {
             const Icon(Icons.logout, size: 64, color: Colors.red),
             const SizedBox(height: 24),
             const Text(
-              'Are you sure you want to logout?',
+              'Tem certeza que quer fazer logout?',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
@@ -29,7 +29,7 @@ class LogoutPage extends StatelessWidget {
               onPressed: () {
                 // Handle logout logic here
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Logged out successfully')),
+                  const SnackBar(content: Text('Logout feito com sucesso')),
                 );
                 // Navigate to login page or home
               },
@@ -47,7 +47,7 @@ class LogoutPage extends StatelessWidget {
                 Navigator.pop(context);
               },
               child: const Text(
-                'Cancel',
+                'Cancelar',
                 style: TextStyle(color: Colors.white, fontSize: 16),
               ),
             ),
