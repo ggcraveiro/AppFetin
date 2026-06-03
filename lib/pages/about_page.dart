@@ -21,28 +21,33 @@ class AboutPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Version 1.0.0',
+              'Versão: 0.0.1',
               style: TextStyle(fontSize: 16, color: Colors.grey),
             ),
             const SizedBox(height: 30),
             const Text(
-              'About This App',
+              'Sobre este app:',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             const Text(
-              'EcoMind is an application designed to promote environmental awareness and sustainable living practices. Join us in making the world greener!',
+              'EcoMind é um aplicativo com objetivo de mudar o meio ambiente. Junte-se a nós!',
               style: TextStyle(fontSize: 14, height: 1.6),
             ),
             const SizedBox(height: 30),
             const Text(
-              'Contact Us',
+              'Entre em contato:',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             const Text(
-              'Email: info@ecomind.com\nWebsite: www.ecomind.com',
+              'Email: gabriel.craveiro@gec.inatel.br',
               style: TextStyle(fontSize: 14, height: 1.6),
+            ),
+            const SizedBox(height: 30),
+            const Text(
+              '2026, Santa Rita do Sapucaí',
+              style: TextStyle(fontSize: 18, height: 1.6),
             ),
           ],
         ),
