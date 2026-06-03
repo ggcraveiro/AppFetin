@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/theme_provider.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -21,13 +23,19 @@ class SettingsPage extends StatelessWidget {
             ),
           ),
           const Divider(),
-          ListTile(
-            title: const Text('Dark Mode'),
-            subtitle: const Text('Ativar modo escuro'),
-            trailing: Switch(
-              value: false,
-              onChanged: (bool value) {},
-            ),
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, child) {
+              return ListTile(
+                title: const Text('Dark Mode'),
+                subtitle: const Text('Ativar modo escuro'),
+                trailing: Switch(
+                  value: themeProvider.isDarkMode,
+                  onChanged: (bool value) {
+                    themeProvider.toggleDarkMode();
+                  },
+                ),
+              );
+            },
           ),
           const Divider(),
           ListTile(
