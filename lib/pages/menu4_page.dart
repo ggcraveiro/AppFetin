@@ -6,7 +6,7 @@ class Menu4Page extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: Text('Incentives Menu'),
+      child: Text('Este é o menu que incluirá os incentivos para o plantio das árvores.'),
     );
   }
 }
