@@ -20,7 +20,7 @@ class Menu1Page extends StatelessWidget {
               // Add button action here
             },
             child: const Text(
-              'Home Menu Button',
+              'PLANTE!',
               style: TextStyle(color: Colors.white, fontSize: 16),
             ),
           ),
