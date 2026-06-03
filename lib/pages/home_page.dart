@@ -28,11 +28,41 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('EcoMind'),
+        actions: [
+          PopupMenuButton(
+            itemBuilder: (BuildContext context) {
+              return [
+                const PopupMenuItem(
+                  value: 'settings',
+                  child: Text('Settings'),
+                ),
+                const PopupMenuItem(
+                  value: 'about',
+                  child: Text('About'),
+                ),
+                const PopupMenuItem(
+                  value: 'logout',
+                  child: Text('Logout'),
+                ),
+              ];
+            },
+            onSelected: (String value) {
+              // Handle menu item selection
+              if (value == 'settings') {
+                // Handle settings
+              } else if (value == 'about') {
+                // Handle about
+              } else if (value == 'logout') {
+                // Handle logout
+              }
+            },
+          ),
+        ],
       ),
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.white,
-        selectedItemColor: Colors.green,
+        selectedItemColor: const Color(0xFF26592E),
         unselectedItemColor: Colors.black,
         type: BottomNavigationBarType.fixed,
         currentIndex: _selectedIndex,
