@@ -14,7 +14,7 @@ class SettingsPage extends StatelessWidget {
         children: [
           ListTile(
             title: const Text('Notifications'),
-            subtitle: const Text('Manage notification preferences'),
+            subtitle: const Text('Gerenciar configurações de notificação'),
             trailing: Switch(
               value: true,
               onChanged: (bool value) {},
@@ -23,7 +23,7 @@ class SettingsPage extends StatelessWidget {
           const Divider(),
           ListTile(
             title: const Text('Dark Mode'),
-            subtitle: const Text('Enable dark theme'),
+            subtitle: const Text('Ativar modo escuro'),
             trailing: Switch(
               value: false,
               onChanged: (bool value) {},
@@ -32,13 +32,13 @@ class SettingsPage extends StatelessWidget {
           const Divider(),
           ListTile(
             title: const Text('Language'),
-            subtitle: const Text('Select your language'),
+            subtitle: const Text('Selecione seu idioma'),
             onTap: () {},
           ),
           const Divider(),
           ListTile(
             title: const Text('Privacy Policy'),
-            subtitle: const Text('View our privacy policy'),
+            subtitle: const Text('Confira nossa política de privacidade'),
             onTap: () {},
           ),
         ],
