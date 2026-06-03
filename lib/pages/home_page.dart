@@ -34,15 +34,15 @@ class _HomePageState extends State<HomePage> {
               return [
                 const PopupMenuItem(
                   value: 'settings',
-                  child: Text('Settings'),
+                  child: Text('Configurações'),
                 ),
                 const PopupMenuItem(
                   value: 'about',
-                  child: Text('About'),
+                  child: Text('Sobre'),
                 ),
                 const PopupMenuItem(
                   value: 'logout',
-                  child: Text('Logout'),
+                  child: Text('Fazer logout'),
                 ),
               ];
             },
