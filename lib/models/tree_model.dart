@@ -4,7 +4,6 @@ class TreeModel {
   final String emoji;
   final String biome;
   final String location;
-  final double co2kg;
   final double progress; // 0.0 to 1.0
   final int monthsPlanted;
   final bool isEndangered;
@@ -16,7 +15,6 @@ class TreeModel {
     required this.emoji,
     required this.biome,
     required this.location,
-    required this.co2kg,
     required this.progress,
     required this.monthsPlanted,
     this.isEndangered = false,
@@ -50,23 +48,23 @@ final List<TreeModel> myTrees = [
   TreeModel(
     name: 'Ipê Amarelo', species: 'Handroanthus chrysotrichus',
     emoji: '🌸', biome: 'Serra', location: 'Rio Sapucaí · MG',
-    co2kg: 12.4, progress: 0.73, monthsPlanted: 8,
+    progress: 0.73, monthsPlanted: 8,
   ),
   TreeModel(
     name: 'Sapucaia', species: 'Lecythis pisonis',
     emoji: '🌰', biome: 'Mata Ciliar', location: 'Mata Ciliar · MG',
-    co2kg: 18.7, progress: 0.17, monthsPlanted: 14,
+    progress: 0.17, monthsPlanted: 14,
     isEndangered: true, urgentDays: 5,
   ),
   TreeModel(
     name: 'Cedro', species: 'Cedrela fissilis',
     emoji: '🪵', biome: 'Serra', location: 'Serra Fina · MG',
-    co2kg: 9.3, progress: 0.90, monthsPlanted: 3,
+    progress: 0.90, monthsPlanted: 3,
   ),
   TreeModel(
     name: 'Copaíba', species: 'Copaifera langsdorffii',
     emoji: '🌿', biome: 'Mata Ciliar', location: 'Vale do Sapucaí · MG',
-    co2kg: 15.9, progress: 0.47, monthsPlanted: 11,
+    progress: 0.47, monthsPlanted: 11,
   ),
 ];
 
@@ -111,4 +109,14 @@ final List<AdoptTreeModel> adoptTrees = [
     biome: 'Várzea', tags: ['Várzea', 'Pioneira', 'Restauração'],
     priceMonthly: 14,
   ),
+  AdoptTreeModel(
+    name: 'Pau-brasil', species: 'Paubrasilia echinata', emoji: '🪵',
+    biome: 'Mata Atlântica', tags: ['Mata Atlântica', 'Símbolo do Brasil'],
+    priceMonthly: 30, isEndangered: true,
+  ),
+  AdoptTreeModel(
+    name: 'Embaúba', species: 'Cecropia pachystachya', emoji: '🌿',
+    biome: 'Mata Atlântica', tags: ['Mata Atlântica', 'Pioneira', 'Restauração'],
+    priceMonthly: 13,
+  )
 ];
