@@ -18,6 +18,7 @@ class _AdoptScreenState extends State<AdoptScreen> {
   final List<Map<String, String>> _filters = [
     {'label': 'Todas', 'value': 'Todos'},
     {'label': '🏞️ Mata Ciliar', 'value': 'Mata Ciliar'},
+    {'label': '🌳 Mata Atlântica', 'value': 'Mata Atlântica'},
     {'label': '⛰️ Serra', 'value': 'Serra'},
     {'label': '💧 Várzea', 'value': 'Várzea'},
     {'label': '🔴 Ameaçadas', 'value': 'Ameaçada'},
@@ -60,7 +61,7 @@ class _AdoptScreenState extends State<AdoptScreen> {
                   delay: Duration(milliseconds: 40 + i * 60),
                   onAdopt: () {
                     setState(() => tree.adopted = true);
-                    _showToast('🌱 ${tree.name} adotada! Obrigado por cuidar do Vale do Sapucaí.');
+                    _showToast('🌱 ${tree.name} adotada(o)! Obrigado por cuidar do Vale do Sapucaí.');
                   },
                 );
               },
