@@ -90,11 +90,6 @@ class _MyTreeCardState extends State<MyTreeCard> with SingleTickerProviderStateM
                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Colors.white)),
                 Text(widget.tree.location,
                   style: TextStyle(fontSize: 10, color: Colors.white.withOpacity(0.55))),
-                const SizedBox(height: 10),
-                Text(
-                  '💨 ${widget.tree.co2kg} kg CO₂',
-                  style: const TextStyle(fontSize: 11, color: AppColors.greenPale, fontWeight: FontWeight.w600),
-                ),
                 const SizedBox(height: 8),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
