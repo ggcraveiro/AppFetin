@@ -212,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           children: [
             _impactStat('🌳', '4', 'Árvores\nadotadas'),
             _impactDivider(),
-            _impactStat('💨', '53,1', 'kg CO₂\nabsorvido'),
+            _impactStat('📊', '5º', 'posição\nno ranking'),
             _impactDivider(),
             _impactStat('🏔️', 'MG', 'Mata\nAtlântica'),
           ],
@@ -379,8 +379,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       {'icon': '🌳', 'label': 'Floresta'},
       {'icon': '🗺️', 'label': 'Mapa'},
       null, // FAB placeholder
-      {'icon': '📊', 'label': 'Impacto'},
-      {'icon': '👤', 'label': 'Perfil'},
+      {'icon': '💰', 'label': 'Incentivos'},
+      {'icon': '⚙️', 'label': 'Configurações'},
     ];
 
     return Container(
