@@ -20,6 +20,21 @@ class TreeModel {
     this.isEndangered = false,
     this.urgentDays,
   });
+
+  // Adicione este factory constructor para converter do Firestore
+  factory TreeModel.fromMap(Map<String, dynamic> map) {
+    return TreeModel(
+      name: map['name'] ?? '',
+      species: map['species'] ?? '',
+      emoji: map['emoji'] ?? '🌳',
+      biome: map['biome'] ?? '',
+      location: map['location'] ?? '',
+      progress: (map['progress'] ?? 0.0).toDouble(),
+      monthsPlanted: map['monthsPlanted'] ?? 0,
+      isEndangered: map['isEndangered'] ?? false,
+      urgentDays: map['urgentDays'],
+    );
+  }
 }
 
 class AdoptTreeModel {

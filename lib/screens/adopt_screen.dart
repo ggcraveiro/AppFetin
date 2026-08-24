@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../colors.dart';
 import '../models/tree_model.dart';
 import '../widgets/adopt_tree_card.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';  
 
 class AdoptScreen extends StatefulWidget {
   const AdoptScreen({super.key});
@@ -59,9 +61,51 @@ class _AdoptScreenState extends State<AdoptScreen> {
                 return AdoptTreeCardWidget(
                   tree: tree,
                   delay: Duration(milliseconds: 40 + i * 60),
-                  onAdopt: () {
-                    setState(() => tree.adopted = true);
-                    _showToast('🌱 ${tree.name} adotada(o)! Obrigado por cuidar do Vale do Sapucaí.');
+                  onAdopt: () async {
+                    final user = FirebaseAuth.instance.currentUser;
+                    
+                    if (user == null) {
+                      _showToast('⚠️ Você precisa estar logado para adotar uma árvore.');
+                      return;
+                    }
+
+                    try {
+                      final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+                      
+                      // Executamos as operações em batch ou sequencialmente:
+                      // 1. Adiciona a árvore na subcoleção de árvores do usuário
+                      await userDocRef.collection('trees').add({
+                        'name': tree.name,
+                        'species': tree.species,
+                        'emoji': tree.emoji,
+                        'biome': tree.biome,
+                        'location': 'Vale do Sapucaí · MG',
+                        'progress': 0.1, // Começa com progresso inicial
+                        'monthsPlanted': 1,
+                        'isEndangered': tree.isEndangered,
+                        'createdAt': FieldValue.serverTimestamp(),
+                      });
+
+                      // 2. Incrementa o contador de árvores plantadas e atualiza o ranking no documento do usuário
+                      await FirebaseFirestore.instance.runTransaction((transaction) async {
+                        final snapshot = await transaction.get(userDocRef);
+                        if (snapshot.exists) {
+                          int currentTrees = snapshot.data()?['treesPlanted'] ?? 0;
+                          // Opcional: Se você usa um campo de 'score' ou 'points' para o ranking, pode somar aqui também
+                          int currentScore = snapshot.data()?['score'] ?? 0;
+
+                          transaction.update(userDocRef, {
+                            'treesPlanted': currentTrees + 1,
+                            'score': currentScore + (tree.isEndangered ? 50 : 20), // Ex: árvores ameaçadas dão mais pontos no ranking
+                          });
+                        }
+                      });
+
+                      setState(() => tree.adopted = true);
+                      _showToast('🌱 ${tree.name} adotada(o)! Sua floresta e ranking foram atualizados.');
+                    } catch (e) {
+                      _showToast('Erro ao adotar árvore. Tente novamente.');
+                    }
                   },
                 );
               },

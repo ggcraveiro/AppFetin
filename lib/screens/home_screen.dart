@@ -7,6 +7,11 @@ import '../widgets/my_tree_card.dart';
 import 'adopt_screen.dart';
 import 'profile_screen.dart';
 import 'settings_screen.dart';
+import '../services/leaderboard_service.dart';
+import 'leaderboard_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
   final String userName;
@@ -17,22 +22,66 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  late AnimationController _heroCtrl;
+late AnimationController _heroCtrl;
   late Animation<double> _heroFade;
   late Animation<Offset> _heroSlide;
 
   int _navIndex = 0;
+  
+  // Criamos uma variável de estado para armazenar o nome real do usuário
+  String _displayName = '';
 
-  String get firstName => widget.userName.split(' ').first;
+  // O getter firstName agora verifica se temos o nome buscado, senão usa o widget.userName ou um padrão
+  String get firstName {
+    if (_displayName.isNotEmpty) {
+      return _displayName.split(' ').first;
+    }
+    if (widget.userName.isNotEmpty) {
+      return widget.userName.split(' ').first;
+    }
+    return 'Explorador';
+  }
 
   @override
   void initState() {
     super.initState();
+    _displayName = widget.userName;
+    _loadUserRealName(); // <--- Busca o nome caso venha vazio do login por email
+
     _heroCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 700));
     _heroFade = CurvedAnimation(parent: _heroCtrl, curve: Curves.easeOut);
     _heroSlide = Tween<Offset>(begin: const Offset(0, 0.25), end: Offset.zero)
         .animate(CurvedAnimation(parent: _heroCtrl, curve: Curves.easeOutCubic));
     _heroCtrl.forward();
+  }
+
+  // Função que busca o nome no Firestore se o widget.userName estiver vazio
+  Future<void> _loadUserRealName() async {
+    if (_displayName.isEmpty) {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        // Tenta pegar pelo displayName do Auth primeiro
+        if (user.displayName != null && user.displayName!.isNotEmpty) {
+          setState(() {
+            _displayName = user.displayName!;
+          });
+          return;
+        }
+
+        // Se não tiver, busca no documento do Firestore
+        try {
+          final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+          if (doc.exists && doc.data() != null) {
+            final data = doc.data() as Map<String, dynamic>;
+            if (data['name'] != null) {
+              setState(() {
+                _displayName = data['name'];
+              });
+            }
+          }
+        } catch (_) {}
+      }
+    }
   }
 
   @override
@@ -211,26 +260,60 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildImpactCard() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(22),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: Colors.white.withOpacity(0.18)),
-        ),
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            _impactStat('🌳', '4', 'Árvores\nadotadas'),
-            _impactDivider(),
-            _impactStat('📊', '5º', 'posição\nno ranking'),
-            _impactDivider(),
-            _impactStat('🏔️', 'MG', 'Mata\nAtlântica'),
-          ],
-        ),
-      ),
+Widget _buildImpactCard() {
+    final user = FirebaseAuth.instance.currentUser;
+
+    return StreamBuilder<DocumentSnapshot>(
+      // Ouve em tempo real as mudanças no documento do usuário logado no Firestore
+      stream: FirebaseFirestore.instance.collection('users').doc(user?.uid).snapshots(),
+      builder: (context, userSnapshot) {
+        int treesCount = 0;
+        
+        if (userSnapshot.hasData && userSnapshot.data!.exists) {
+          final data = userSnapshot.data!.data() as Map<String, dynamic>;
+          treesCount = data['treesPlanted'] ?? 0;
+        }
+
+        return FutureBuilder<int>(
+          future: LeaderboardService().getCurrentUserRank(),
+          builder: (context, rankSnapshot) {
+            String rankValue = '...';
+            if (rankSnapshot.hasData) {
+              rankValue = '${rankSnapshot.data}º';
+            }
+
+            return GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const LeaderboardScreen()),
+                );
+              },
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(22),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(color: Colors.white.withOpacity(0.18)),
+                  ),
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      // Árvores adotadas dinâmicas
+                      _impactStat('🌳', '$treesCount', 'Árvores\nadotadas'),
+                      _impactDivider(),
+                      // Posição no ranking dinâmica
+                      _impactStat('📊', rankValue, 'posição\nno ranking'),
+                      _impactDivider(),
+                      _impactStat('🏔️', 'MG', 'Mata\nAtlântica'),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -278,17 +361,40 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildChips() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: [
-          _chip('🏆 Rank #42', AppColors.gold),
-          const SizedBox(width: 8),
-          _chip('🔥 12 dias seguidos', AppColors.coral),
-        ],
-      ),
+Widget _buildChips() {
+    final user = FirebaseAuth.instance.currentUser;
+
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance.collection('users').doc(user?.uid).snapshots(),
+      builder: (context, snapshot) {
+        int streak = 0;
+        
+        if (snapshot.hasData && snapshot.data!.exists) {
+          final data = snapshot.data!.data() as Map<String, dynamic>;
+          streak = data['streak'] ?? 0; // Puxa a sequência salva no Firestore
+        }
+
+        return FutureBuilder<int>(
+          future: LeaderboardService().getCurrentUserRank(),
+          builder: (context, rankSnapshot) {
+            int rank = rankSnapshot.data ?? 0;
+
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  // Chip de Rank dinâmico
+                  _chip('🏆 Rank #${rank > 0 ? rank : '-'}', AppColors.gold),
+                  const SizedBox(width: 8),
+                  // Chip de Sequência dinâmico
+                  _chip('🔥 $streak dias seguidos', AppColors.coral),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -327,19 +433,68 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildTreeScroll() {
+Widget _buildTreeScroll() {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return const SizedBox(
+        height: 200,
+        child: Center(
+          child: Text('Faça login para ver suas árvores.', style: TextStyle(color: Colors.white70)),
+        ),
+      );
+    }
+
     return SizedBox(
       height: 200,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemCount: myTrees.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 14),
-        itemBuilder: (_, i) => MyTreeCard(tree: myTrees[i], delay: Duration(milliseconds: 350 + i * 80)),
+      child: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('trees')
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.greenLight),
+            );
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Text(
+                  'Sua floresta está limpa e pronta para começar! Adote sua primeira árvore abaixo. 🌱',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white.withOpacity(0.65), fontSize: 13),
+                ),
+              ),
+            );
+          }
+
+          final treeDocs = snapshot.data!.docs;
+
+          return ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: treeDocs.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 14),
+            itemBuilder: (_, i) {
+              final treeData = treeDocs[i].data() as Map<String, dynamic>;
+              final tree = TreeModel.fromMap(treeData);
+
+              return MyTreeCard(
+                tree: tree, 
+                delay: Duration(milliseconds: 350 + i * 80),
+              );
+            },
+          );
+        },
       ),
     );
   }
-
+  
   Widget _buildAdoptBanner() {
     return GestureDetector(
       onTap: _goToAdopt,

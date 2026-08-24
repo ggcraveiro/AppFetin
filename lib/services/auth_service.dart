@@ -47,16 +47,40 @@ class AuthService {
     }
   }
 
-  // Autenticação de usuário existente
+  // Autenticação de usuário existente (Aceita E-mail ou Nome de Usuário)
   Future<String?> signIn({
-    required String email,
+    required String email, // Aqui o parâmetro recebe o que foi digitado no campo (pode ser email ou nome)
     required String password,
   }) async {
     try {
+      String emailToUse = email.trim();
+
+      // Se o texto digitado não contiver '@', assumimos que é um Nome de Usuário
+      if (!emailToUse.contains('@')) {
+        final querySnapshot = await _firestore
+            .collection('users')
+            .where('name', isEqualTo: emailToUse)
+            .limit(1)
+            .get();
+
+        if (querySnapshot.docs.isEmpty) {
+          return 'Nome de usuário não encontrado.';
+        }
+
+        // Recupera o e-mail real associado àquele nome de usuário no documento do Firestore
+        emailToUse = querySnapshot.docs.first.data()['email'] ?? '';
+        
+        if (emailToUse.isEmpty) {
+          return 'E-mail não vinculado a este usuário.';
+        }
+      }
+
+      // Faz o login utilizando o e-mail (seja o que o usuário digitou direto ou o encontrado pelo nome)
       await _auth.signInWithEmailAndPassword(
-        email: email.trim(),
+        email: emailToUse,
         password: password.trim(),
       );
+      
       return null; // Sucesso
     } on FirebaseAuthException catch (e) {
       return _handleAuthException(e);
