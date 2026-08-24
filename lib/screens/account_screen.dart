@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart'; 
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../services/auth_service.dart';
 import 'home_screen.dart';
 
 class AccountScreen extends StatefulWidget {
@@ -32,7 +34,6 @@ class _AccountScreenState extends State<AccountScreen> {
   void _criarConta() {
     // Valida se todos os TextFormField passaram nas regras
     if (_formKey.currentState!.validate()) {
-      
       // Mostra o aviso de sucesso
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -40,9 +41,9 @@ class _AccountScreenState extends State<AccountScreen> {
           backgroundColor: Color(0xFF52b788),
         ),
       );
-      
+
       // Avança para a HomeScreen e passa o nome digitado
-      // Usamos pushReplacement para substituir a tela atual, impedindo 
+      // Usamos pushReplacement para substituir a tela atual, impedindo
       // que o usuário volte para a tela de "Criar Conta" pelo botão de voltar do celular.
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
@@ -79,7 +80,8 @@ class _AccountScreenState extends State<AccountScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF081c15), // Mantendo o fundo padrão do app
+      backgroundColor:
+          const Color(0xFF081c15), // Mantendo o fundo padrão do app
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -98,7 +100,7 @@ class _AccountScreenState extends State<AccountScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 20),
-              
+
               // --- 1. Nome de Usuário ---
               TextFormField(
                 controller: _userCtrl,
@@ -159,7 +161,8 @@ class _AccountScreenState extends State<AccountScreen> {
                 style: const TextStyle(color: Colors.white),
                 decoration: _buildDecoration('Confirmar senha'),
                 textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) => _criarConta(), // Tenta salvar ao dar enter
+                onFieldSubmitted: (_) =>
+                    _criarConta(), // Tenta salvar ao dar enter
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Por favor, confirme sua senha.';
@@ -183,7 +186,55 @@ class _AccountScreenState extends State<AccountScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: _criarConta,
+                onPressed: () async {
+                  // 1. Validação do formulário usando a _formKey que você já tem
+                  if (!_formKey.currentState!.validate()) {
+                    return;
+                  }
+
+                  // 2. Instancia o serviço de autenticação
+                  final authService = AuthService();
+
+                  // 3. Tenta cadastrar o usuário enviando os controladores corretos
+                  final String? errorMessage = await authService.signUp(
+                    name: _userCtrl.text,
+                    email: _emailCtrl.text,
+                    password: _passCtrl.text,
+                  );
+
+                  if (!context.mounted) return;
+
+                  // 4. Trata o resultado
+                  if (errorMessage != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(errorMessage),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                  } else {
+                    // Sucesso!
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setString('raizes_name', _userCtrl.text.trim());
+
+                    if (!context.mounted) return;
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Conta criada com sucesso! 🌱'),
+                        backgroundColor: Color(0xFF52b788),
+                      ),
+                    );
+
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            HomeScreen(userName: _userCtrl.text.trim()),
+                      ),
+                      (route) => false,
+                    );
+                  }
+                },
                 child: const Text(
                   'Cadastrar',
                   style: TextStyle(
@@ -191,7 +242,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
+              )
             ],
           ),
         ),
@@ -199,4 +250,3 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 }
-

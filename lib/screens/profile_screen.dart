@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../colors.dart';
+import '../main.dart'; // Necessário para acessar o SplashRouter
 
 class ProfileScreen extends StatefulWidget {
   final String userName;
   
-  // O nome agora pode ser recebido. Coloquei um valor padrão caso você chame a tela sem passar o nome
-  const ProfileScreen({super.key, this.userName = 'Dev'});
+  const ProfileScreen({super.key, this.userName = 'Usuário'});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -14,6 +15,62 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   String get firstName => widget.userName.split(' ').first;
+
+  // Função para deslogar do aplicativo
+  Future<void> _logout() async {
+    // Acessa o armazenamento local
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Remove o nome salvo para que o app exija login novamente
+    await prefs.remove('raizes_name');
+    
+    if (!mounted) return;
+    
+    // pushAndRemoveUntil limpa todo o histórico de navegação para que o 
+    // usuário não possa voltar ao perfil clicando no botão "voltar" do celular
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const SplashRouter()),
+      (route) => false,
+    );
+  }
+
+  // Função para deletar a conta (com confirmação)
+  void _deleteAccount() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1b4332),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Deletar Conta', 
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'Tem certeza que deseja deletar sua conta permanentemente? Esta ação não pode ser desfeita.', 
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(), // Apenas fecha o aviso
+            child: const Text('Cancelar', style: TextStyle(color: AppColors.greenLight)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              // Por enquanto, deletar a conta faz o mesmo que o logout.
+              // Futuramente você pode adicionar a lógica de apagar do banco de dados aqui.
+              _logout(); 
+            },
+            child: const Text('Deletar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +80,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        // O Flutter adiciona automaticamente o botão de voltar quando usamos o Navigator.push()
         iconTheme: const IconThemeData(color: Colors.white), 
         title: Text(
           'Meu Perfil',
@@ -52,8 +108,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildUserInfo(),
             const SizedBox(height: 32),
             _buildStatsCard(),
-            const SizedBox(height: 32),
-            _buildMenuItems(),
+            const SizedBox(height: 48), // Espaço extra antes da área de perigo
+            _buildActionOptions(),
           ],
         ),
       ),
@@ -189,40 +245,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildMenuItems() {
+  // Área com os botões de controle da conta
+  Widget _buildActionOptions() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Configurações',
-          style: GoogleFonts.dmSans(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: AppColors.greenMist,
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 12),
+          child: Text(
+            'Controle da Conta',
+            style: GoogleFonts.dmSans(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.greenMist,
+              letterSpacing: 1.2,
+            ),
           ),
         ),
+        _buildListTile(
+          icon: Icons.logout, 
+          title: 'Sair da conta', 
+          onTap: _logout,
+        ),
         const SizedBox(height: 12),
-        _buildListTile(Icons.language, 'Idioma', true),
-        _buildListTile(Icons.security, 'Privacidade', true),
-        _buildListTile(Icons.help_outline, 'Ajuda e Suporte', true),
-        const SizedBox(height: 16),
-        _buildListTile(Icons.logout, 'Sair da conta', false, isDestructive: true),
-        _buildListTile(Icons.delete_forever, 'Deletar conta', false, isDestructive: true),
+        _buildListTile(
+          icon: Icons.delete_forever, 
+          title: 'Deletar conta', 
+          isDestructive: true, 
+          onTap: _deleteAccount,
+        ),
       ],
     );
   }
 
-  Widget _buildListTile(IconData icon, String title, bool showTrailing, {bool isDestructive = false}) {
+  // Componente reutilizável para os botões do final
+  Widget _buildListTile({
+    required IconData icon, 
+    required String title, 
+    required VoidCallback onTap, 
+    bool isDestructive = false
+  }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: isDestructive ? Colors.redAccent.withOpacity(0.1) : Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
+        border: isDestructive ? Border.all(color: Colors.redAccent.withOpacity(0.3)) : null,
       ),
       child: ListTile(
         leading: Icon(
           icon, 
-          color: isDestructive ? Colors.redAccent : AppColors.greenLight,
+          color: isDestructive ? Colors.redAccent : Colors.white70,
         ),
         title: Text(
           title,
@@ -231,12 +303,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             fontWeight: FontWeight.w500,
           ),
         ),
-        trailing: showTrailing 
-          ? Icon(Icons.chevron_right, color: Colors.white.withOpacity(0.4)) 
-          : null,
-        onTap: () {
-          // Ação correspondente do item (Ex: se isDestructive for true, deslogar o usuário)
-        },
+        onTap: onTap,
       ),
     );
   }

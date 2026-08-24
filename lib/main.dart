@@ -2,17 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_core/firebase_core.dart';
+
 import 'screens/home_screen.dart';
 import 'screens/account_screen.dart';
+import 'firebase_options.dart'; // Gerado automaticamente pelo FlutterFire
+import 'services/auth_service.dart'; // Importe o serviço de autenticação
 
 void main() async {
+  // Garante que os bindings do Flutter estejam prontos antes de chamar o Firebase
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
-  ));
-  runApp(const RaizesApp());
+  
+  // Inicializa a conexão com o projeto no servidor
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  runApp(const RaizesApp()); // Mantenha a chamada do seu app principal aqui
 }
 
 class RaizesApp extends StatelessWidget {
@@ -29,9 +35,9 @@ class RaizesApp extends StatelessWidget {
           bodyColor: Colors.white,
           displayColor: Colors.white,
         ),
-        colorScheme: ColorScheme.dark(
-          primary: const Color(0xFF52b788),
-          surface: const Color(0xFF081c15),
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFF52b788),
+          surface: Color(0xFF081c15),
         ),
       ),
       home: const SplashRouter(),
@@ -56,7 +62,9 @@ class _SplashRouterState extends State<SplashRouter> {
   Future<void> _checkName() async {
     final prefs = await SharedPreferences.getInstance();
     String? name = prefs.getString('raizes_name');
+    
     if (!mounted) return;
+    
     if (name == null || name.isEmpty) {
       final result = await showDialog<String>(
         context: context,
@@ -66,7 +74,9 @@ class _SplashRouterState extends State<SplashRouter> {
       name = result ?? 'Visitante';
       await prefs.setString('raizes_name', name);
     }
+    
     if (!mounted) return;
+    
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => HomeScreen(userName: name!)),
     );
@@ -76,7 +86,11 @@ class _SplashRouterState extends State<SplashRouter> {
   Widget build(BuildContext context) {
     return const Scaffold(
       backgroundColor: Color(0xFF081c15),
-      body: Center(child: CircularProgressIndicator(color: Color(0xFF52b788))),
+      body: Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFF52b788),
+        ),
+      ),
     );
   }
 }
@@ -104,10 +118,15 @@ class _NameDialogState extends State<_NameDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: const Color(0xFF1b4332),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
       title: Text(
         'Bem-vindo ao Raízes 🌱',
-        style: GoogleFonts.playfairDisplay(color: Colors.white, fontSize: 18),
+        style: GoogleFonts.playfairDisplay(
+          color: Colors.white, 
+          fontSize: 18,
+        ),
       ),
       // Use Column para adicionar múltiplos campos de texto
       content: Column(
@@ -172,7 +191,34 @@ class _NameDialogState extends State<_NameDialog> {
               borderRadius: BorderRadius.circular(12),
             ),
           ),
-          onPressed: _submit,
+          onPressed: () async {
+            // Instancia o serviço que criamos no auth_service.dart
+            final authService = AuthService();
+
+            // Como é um diálogo de entrada (login), vamos usar o método signIn
+            final String? errorMessage = await authService.signIn(
+              email: _nameCtrl.text,
+              password: _passCtrl.text,
+            );
+
+            if (!context.mounted) return;
+
+            // Se retornou mensagem, exibe o erro
+            if (errorMessage != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(errorMessage),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+            } else {
+              // Se deu tudo certo, fecha o diálogo passando o e-mail/nome do usuário
+              // para a tela principal (SplashRouter)
+              Navigator.of(context).pop(
+                _nameCtrl.text.trim().isEmpty ? 'Usuário' : _nameCtrl.text.trim(),
+              );
+            }
+          },
           child: const Text(
             'Entrar',
             style: TextStyle(fontWeight: FontWeight.bold),
@@ -182,10 +228,28 @@ class _NameDialogState extends State<_NameDialog> {
     );
   }
 
-  void _submit() {
-    // Retorna o nome de usuário preenchido. 
-    // Futuramente, você pode usar a _passCtrl.text aqui para validar o login.
-    Navigator.of(context).pop(_nameCtrl.text.trim().isEmpty ? 'Dev' : _nameCtrl.text.trim());
+  void _submit() async {
+    // Mesma lógica de autenticação do ElevatedButton para quem aperta "Enter" no teclado
+    final authService = AuthService();
+    final String? errorMessage = await authService.signIn(
+      email: _nameCtrl.text,
+      password: _passCtrl.text,
+    );
+
+    if (!context.mounted) return;
+
+    if (errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } else {
+      Navigator.of(context).pop(
+        _nameCtrl.text.trim().isEmpty ? 'Usuário' : _nameCtrl.text.trim(),
+      );
+    }
   }
 
   void _createAccount() {
@@ -194,8 +258,12 @@ class _NameDialogState extends State<_NameDialog> {
         pageBuilder: (_, anim, __) => const AccountScreen(),
         transitionsBuilder: (_, anim, __, child) {
           return SlideTransition(
-            position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
-                .animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
+            position: Tween<Offset>(
+              begin: const Offset(1, 0), 
+              end: Offset.zero,
+            ).animate(
+              CurvedAnimation(parent: anim, curve: Curves.easeOutCubic),
+            ),
             child: child,
           );
         },

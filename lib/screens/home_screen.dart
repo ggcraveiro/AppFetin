@@ -6,6 +6,7 @@ import '../widgets/floating_leaf.dart';
 import '../widgets/my_tree_card.dart';
 import 'adopt_screen.dart';
 import 'profile_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String userName;
@@ -407,8 +408,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ...items.asMap().entries.map((e) {
             final i = e.key;
             final item = e.value;
+            
             if (item == null) {
-              // FAB
+              // Botão central (FAB)
               return GestureDetector(
                 onTap: _goToAdopt,
                 child: Transform.translate(
@@ -428,10 +430,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               );
             }
+
             final navI = i > 2 ? i - 1 : i;
             final active = _navIndex == navI;
+            
             return GestureDetector(
-              onTap: () => setState(() => _navIndex = navI),
+              onTap: () {
+                // Se o botão clicado for o de Configurações, abre a nova tela
+                if (item['label'] == 'Configurações') {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const SettingsScreen(),
+                    ),
+                  );
+                } else {
+                  // Caso contrário, apenas muda a aba selecionada
+                  setState(() => _navIndex = navI);
+                }
+              },
               child: Container(
                 padding: const EdgeInsets.fromLTRB(14, 8, 14, 16),
                 decoration: BoxDecoration(
