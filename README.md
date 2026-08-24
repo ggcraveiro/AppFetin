@@ -2,4 +2,4 @@
 
 Aplicativo que será apresentado na Feira Tecnológica do Inatel - FETIN em 24 de setembro.
 
-## Última atualização: 17 de agosto de 2026
+## Última atualização: 24 de agosto de 2026
