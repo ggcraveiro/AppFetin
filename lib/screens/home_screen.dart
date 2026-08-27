@@ -12,6 +12,7 @@ import 'leaderboard_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'incentives_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String userName;
@@ -192,7 +193,7 @@ late AnimationController _heroCtrl;
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '🌱 Raízes · Sul de Minas',
+                '🌱 EcoMind · Sul de Minas',
                 style: TextStyle(
                   fontSize: 10,
                   letterSpacing: 2.5,
@@ -202,7 +203,7 @@ late AnimationController _heroCtrl;
               ),
               const SizedBox(height: 6),
               Text(
-                'Olá, $firstName! 👋',
+                'Olá, seja bem-vindo(a)! 👋',
                 style: GoogleFonts.playfairDisplay(
                   fontSize: 26,
                   fontWeight: FontWeight.w700,
@@ -591,15 +592,15 @@ Widget _buildTreeScroll() {
             
             return GestureDetector(
               onTap: () {
-                // Se o botão clicado for o de Configurações, abre a nova tela
                 if (item['label'] == 'Configurações') {
                   Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const SettingsScreen(),
-                    ),
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                  );
+                } else if (item['label'] == 'Incentivos') {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const IncentivesScreen()),
                   );
                 } else {
-                  // Caso contrário, apenas muda a aba selecionada
                   setState(() => _navIndex = navI);
                 }
               },

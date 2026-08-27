@@ -106,8 +106,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildProfileAvatar(),
             const SizedBox(height: 16),
             _buildUserInfo(),
-            const SizedBox(height: 32),
-            _buildStatsCard(),
             const SizedBox(height: 48), // Espaço extra antes da área de perigo
             _buildActionOptions(),
           ],
@@ -190,61 +188,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildStatsCard() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white.withOpacity(0.18)),
-      ),
-      child: Row(
-        children: [
-          _buildStatItem('🌳', '4', 'Árvores'),
-          _buildDivider(),
-          _buildStatItem('🔥', '12', 'Dias Seguidos'),
-          _buildDivider(),
-          _buildStatItem('🏆', '#5', 'Ranking'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String icon, String value, String label) {
-    return Expanded(
-      child: Column(
-        children: [
-          Text(icon, style: const TextStyle(fontSize: 24)),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: GoogleFonts.dmSans(
-              fontSize: 20, 
-              fontWeight: FontWeight.bold, 
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12, 
-              color: Colors.white.withOpacity(0.7),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return Container(
-      width: 1, 
-      height: 40, 
-      color: Colors.white.withOpacity(0.2),
-    );
-  }
-
   // Área com os botões de controle da conta
   Widget _buildActionOptions() {
     return Column(
@@ -262,6 +205,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ),
+        _buildListTile(
+          icon: Icons.manage_accounts, 
+          title: 'Alterar nome de usuário', 
+          onTap: _logout,
+        ),
+        const SizedBox(height: 12),
+        _buildListTile(
+          icon: Icons.sync_lock, 
+          title: 'Alterar senha', 
+          onTap: _logout,
+        ),
+        const SizedBox(height: 12),
         _buildListTile(
           icon: Icons.logout, 
           title: 'Sair da conta', 

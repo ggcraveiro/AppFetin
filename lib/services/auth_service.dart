@@ -12,38 +12,46 @@ class AuthService {
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   // Cadastro de novo usuário
-  Future<String?> signUp({
+Future<String?> signUp({
     required String name,
     required String email,
     required String password,
   }) async {
     try {
-      // 1. Cria a credencial no Firebase Auth
+      // 1. Cria a credencial
       UserCredential credential = await _auth.createUserWithEmailAndPassword(
         email: email.trim(),
         password: password.trim(),
       );
 
-      // 2. Atualiza o nome de exibição no perfil
-      await credential.user?.updateDisplayName(name.trim());
+      final user = credential.user;
+      if (user == null) return 'Erro ao criar credencial de usuário.';
 
-      // 3. Salva a ficha do usuário no Firestore
-      if (credential.user != null) {
-        await _firestore.collection('users').doc(credential.user!.uid).set({
-          'uid': credential.user!.uid,
-          'name': name.trim(),
-          'email': email.trim(),
-          'createdAt': FieldValue.serverTimestamp(),
-          'treesPlanted': 0,
-          'streak': 0,
-        });
-      }
+      // 2. Atualiza o perfil no Auth
+      await user.updateDisplayName(name.trim());
 
-      return null; // Retorno nulo indica sucesso
+      // 3. Aguarda explicitamente a gravação no Firestore
+      await _firestore.collection('users').doc(user.uid).set({
+        'uid': user.uid,
+        'name': name.trim(),
+        'email': email.trim(),
+        'createdAt': FieldValue.serverTimestamp(),
+        'treesPlanted': 0,
+        'streak': 0,
+        'maxStreak': 0,
+        'score': 0,
+      }, SetOptions(merge: true)); // Garantia de merge caso o documento exista
+
+      return null; // Sucesso garantido
     } on FirebaseAuthException catch (e) {
       return _handleAuthException(e);
+    } on FirebaseException catch (e) {
+      // Pega erros específicos do Firestore (ex: offline, permissão)
+      print('Erro no Firestore: ${e.code} - ${e.message}');
+      return 'Erro ao salvar perfil no banco de dados: ${e.message}';
     } catch (e) {
-      return 'Ocorreu um erro inesperado. Tente novamente.';
+      print('Erro geral: $e');
+      return 'Ocorreu um erro inesperado ao criar a conta.';
     }
   }
 
@@ -95,22 +103,30 @@ class AuthService {
   }
 
   // Mapeamento de mensagens de erro do Firebase
-  String _handleAuthException(FirebaseAuthException e) {
-    switch (e.code) {
-      case 'weak-password':
-        return 'A senha deve ter pelo menos 6 caracteres.';
-      case 'email-already-in-use':
-        return 'Este e-mail já está cadastrado.';
-      case 'invalid-email':
-        return 'O e-mail digitado não é válido.';
-      case 'user-not-found':
-      case 'wrong-password':
-      case 'invalid-credential':
-        return 'E-mail ou senha incorretos.';
-      case 'user-disabled':
-        return 'Esta conta foi desativada.';
-      default:
-        return 'Erro de autenticação: ${e.message}';
-    }
+String _handleAuthException(FirebaseAuthException e) {
+  switch (e.code) {
+    case 'invalid-credential':
+    case 'invalid-login-credentials':
+      return 'E-mail ou senha incorretos. Verifique suas credenciais.';
+    case 'user-not-found':
+      return 'Nenhum usuário encontrado para este e-mail.';
+    case 'wrong-password':
+      return 'Senha incorreta. Tente novamente.';
+    case 'email-already-in-use':
+      return 'Este e-mail já está em uso por outra conta.';
+    case 'invalid-email':
+      return 'O e-mail digitado é inválido.';
+    case 'weak-password':
+      return 'A senha deve ter pelo menos 6 caracteres.';
+    case 'user-disabled':
+      return 'Esta conta de usuário foi desativada.';
+    case 'too-many-requests':
+      return 'Muitas tentativas malsucedidas. Tente novamente mais tarde.';
+    case 'network-request-failed':
+      return 'Falha na conexão de rede. Verifique sua internet.';
+    default:
+      print('Código de erro do Firebase Auth não mapeado: ${e.code}');
+      return 'E-mail ou senha incorretos. Tente novamente.';
   }
+}
 }
