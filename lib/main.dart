@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -27,7 +26,7 @@ class RaizesApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Raízes',
+      title: 'EcoMind',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
@@ -122,7 +121,7 @@ class _NameDialogState extends State<_NameDialog> {
         borderRadius: BorderRadius.circular(20),
       ),
       title: Text(
-        'Bem-vindo ao Raízes 🌱',
+        'Bem-vindo ao EcoMind 🌱',
         style: GoogleFonts.playfairDisplay(
           color: Colors.white, 
           fontSize: 18,
@@ -197,7 +196,7 @@ class _NameDialogState extends State<_NameDialog> {
 
             // Como é um diálogo de entrada (login), vamos usar o método signIn
             final String? errorMessage = await authService.signIn(
-              email: _nameCtrl.text,
+              identifier: _nameCtrl.text,
               password: _passCtrl.text,
             );
 
@@ -232,7 +231,7 @@ class _NameDialogState extends State<_NameDialog> {
     // Mesma lógica de autenticação do ElevatedButton para quem aperta "Enter" no teclado
     final authService = AuthService();
     final String? errorMessage = await authService.signIn(
-      email: _nameCtrl.text,
+      identifier: _nameCtrl.text,
       password: _passCtrl.text,
     );
 

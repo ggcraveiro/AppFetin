@@ -56,46 +56,51 @@ Future<String?> signUp({
   }
 
   // Autenticação de usuário existente (Aceita E-mail ou Nome de Usuário)
-  Future<String?> signIn({
-    required String email, // Aqui o parâmetro recebe o que foi digitado no campo (pode ser email ou nome)
-    required String password,
-  }) async {
-    try {
-      String emailToUse = email.trim();
+Future<String?> signIn({
+  required String identifier, // Pode ser e-mail ou nome de usuário
+  required String password,
+}) async {
+  try {
+    String emailToUse = identifier.trim();
 
-      // Se o texto digitado não contiver '@', assumimos que é um Nome de Usuário
-      if (!emailToUse.contains('@')) {
-        final querySnapshot = await _firestore
-            .collection('users')
-            .where('name', isEqualTo: emailToUse)
-            .limit(1)
-            .get();
+    // 1. Se NÃO contiver '@', assume que é um nome de usuário
+    if (!emailToUse.contains('@')) {
+      // Busca no Firestore na coleção 'users' onde o campo 'name' ou 'username' seja igual ao digitado
+      final querySnapshot = await _firestore
+          .collection('users')
+          .where('name', isEqualTo: emailToUse)
+          .limit(1)
+          .get();
 
-        if (querySnapshot.docs.isEmpty) {
-          return 'Nome de usuário não encontrado.';
-        }
-
-        // Recupera o e-mail real associado àquele nome de usuário no documento do Firestore
-        emailToUse = querySnapshot.docs.first.data()['email'] ?? '';
-        
-        if (emailToUse.isEmpty) {
-          return 'E-mail não vinculado a este usuário.';
-        }
+      // Se não encontrar nenhum documento com esse nome
+      if (querySnapshot.docs.isEmpty) {
+        return 'Nome de usuário não encontrado.';
       }
 
-      // Faz o login utilizando o e-mail (seja o que o usuário digitou direto ou o encontrado pelo nome)
-      await _auth.signInWithEmailAndPassword(
-        email: emailToUse,
-        password: password.trim(),
-      );
-      
-      return null; // Sucesso
-    } on FirebaseAuthException catch (e) {
-      return _handleAuthException(e);
-    } catch (e) {
-      return 'Ocorreu um erro inesperado. Tente novamente.';
+      // Extrai o e-mail cadastrado nesse documento
+      final userData = querySnapshot.docs.first.data();
+      emailToUse = userData['email'] ?? '';
+
+      if (emailToUse.isEmpty) {
+        return 'Nenhum e-mail associado a este nome de usuário.';
+      }
     }
+
+    // 2. Realiza o login no Firebase Auth utilizando o e-mail resolvido
+    await _auth.signInWithEmailAndPassword(
+      email: emailToUse,
+      password: password.trim(),
+    );
+
+    return null; // Sucesso
+  } on FirebaseAuthException catch (e) {
+    print("Erro do FirebaseAuth: ${e.code}");
+    return _handleAuthException(e);
+  } catch (e) {
+    print("Erro no login: $e");
+    return 'E-mail, usuário ou senha incorretos.';
   }
+}
 
   // Sair da conta
   Future<void> signOut() async {

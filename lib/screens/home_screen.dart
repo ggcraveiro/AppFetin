@@ -13,6 +13,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'incentives_screen.dart';
+import 'map_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String userName;
@@ -596,7 +597,11 @@ Widget _buildTreeScroll() {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const SettingsScreen()),
                   );
-                } else if (item['label'] == 'Incentivos') {
+                } else if (item['label'] == 'Mapa') {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const MapScreen()),
+                  );
+                } else if (item['label  '] == 'Incentivos') {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const IncentivesScreen()),
                   );
