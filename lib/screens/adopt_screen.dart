@@ -44,6 +44,146 @@ class _AdoptScreenState extends State<AdoptScreen> {
     });
   }
 
+  // Abre o modal para seleção da forma de pagamento antes de efetivar a adoção
+  void _showPaymentModal(BuildContext context, AdoptTreeModel tree) {
+    String selectedMethod = 'pix';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.greenDark,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Confirmar Adoção 🌿',
+                    style: GoogleFonts.playfairDisplay(
+                      fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Espécie: ${tree.name} (${tree.species})',
+                    style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Valor mensal: R\$ ${tree.priceMonthly.toStringAsFixed(2)}',
+                    style: const TextStyle(color: AppColors.greenLight, fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text('Forma de Pagamento:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 10),
+                  
+                  RadioListTile<String>(
+                    value: 'pix',
+                    groupValue: selectedMethod,
+                    activeColor: AppColors.greenLight,
+                    title: const Text('PIX (Aprovação Instantânea)', style: TextStyle(color: Colors.white, fontSize: 13)),
+                    secondary: const Text('⚡', style: TextStyle(fontSize: 18)),
+                    onChanged: (val) => setModalState(() => selectedMethod = val!),
+                  ),
+                  
+                  RadioListTile<String>(
+                    value: 'card',
+                    groupValue: selectedMethod,
+                    activeColor: AppColors.greenLight,
+                    title: const Text('Cartão de Crédito Simulado', style: TextStyle(color: Colors.white, fontSize: 13)),
+                    secondary: const Text('💳', style: TextStyle(fontSize: 18)),
+                    onChanged: (val) => setModalState(() => selectedMethod = val!),
+                  ),
+                  
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.greenLight,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _processAdoption(tree);
+                      },
+                      child: const Text('Pagar e Adotar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Grava a árvore no Firestore após a confirmação do pagamento
+  Future<void> _processAdoption(AdoptTreeModel tree) async {
+    final user = FirebaseAuth.instance.currentUser;
+    
+    if (user == null) {
+      _showToast('⚠️ Você precisa estar logado para adotar uma árvore.');
+      return;
+    }
+
+    try {
+      final treeData = {
+        'userId': user.uid,
+        'name': tree.name,
+        'species': tree.species,
+        'emoji': tree.emoji,
+        'biome': tree.biome,
+        'location': 'Vale do Sapucaí · MG',
+        'progress': 0.1,
+        'monthsPlanted': 1,
+        'isEndangered': tree.isEndangered,
+        'latitude': tree.latitude,
+        'longitude': tree.longitude,
+        'createdAt': FieldValue.serverTimestamp(),
+      };
+
+      // 1. Salva na coleção global "trees"
+      final globalDocRef = await FirebaseFirestore.instance
+          .collection('trees')
+          .add(treeData);
+
+      // 2. Salva na subcoleção do usuário com o mesmo ID
+      final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+      await userDocRef
+          .collection('trees')
+          .doc(globalDocRef.id)
+          .set(treeData);
+
+      // 3. Atualiza os contadores de pontuação e árvores do usuário
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final snapshot = await transaction.get(userDocRef);
+        if (snapshot.exists) {
+          int currentTrees = snapshot.data()?['treesPlanted'] ?? 0;
+          int currentScore = snapshot.data()?['score'] ?? 0;
+
+          transaction.update(userDocRef, {
+            'treesPlanted': currentTrees + 1,
+            'score': currentScore + (tree.isEndangered ? 50 : 20),
+          });
+        }
+      });
+
+      setState(() => tree.adopted = true);
+      _showToast('🌱 Pagamento confirmado! ${tree.name} foi adotada com sucesso.');
+    } catch (e) {
+      _showToast('Erro ao processar adoção. Tente novamente.');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -61,52 +201,7 @@ class _AdoptScreenState extends State<AdoptScreen> {
                 return AdoptTreeCardWidget(
                   tree: tree,
                   delay: Duration(milliseconds: 40 + i * 60),
-                  onAdopt: () async {
-                    final user = FirebaseAuth.instance.currentUser;
-                    
-                    if (user == null) {
-                      _showToast('⚠️ Você precisa estar logado para adotar uma árvore.');
-                      return;
-                    }
-
-                    try {
-                      final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
-                      
-                      // Executamos as operações em batch ou sequencialmente:
-                      // 1. Adiciona a árvore na subcoleção de árvores do usuário
-                      await userDocRef.collection('trees').add({
-                        'name': tree.name,
-                        'species': tree.species,
-                        'emoji': tree.emoji,
-                        'biome': tree.biome,
-                        'location': 'Vale do Sapucaí · MG',
-                        'progress': 0.1, // Começa com progresso inicial
-                        'monthsPlanted': 1,
-                        'isEndangered': tree.isEndangered,
-                        'createdAt': FieldValue.serverTimestamp(),
-                      });
-
-                      // 2. Incrementa o contador de árvores plantadas e atualiza o ranking no documento do usuário
-                      await FirebaseFirestore.instance.runTransaction((transaction) async {
-                        final snapshot = await transaction.get(userDocRef);
-                        if (snapshot.exists) {
-                          int currentTrees = snapshot.data()?['treesPlanted'] ?? 0;
-                          // Opcional: Se você usa um campo de 'score' ou 'points' para o ranking, pode somar aqui também
-                          int currentScore = snapshot.data()?['score'] ?? 0;
-
-                          transaction.update(userDocRef, {
-                            'treesPlanted': currentTrees + 1,
-                            'score': currentScore + (tree.isEndangered ? 50 : 20), // Ex: árvores ameaçadas dão mais pontos no ranking
-                          });
-                        }
-                      });
-
-                      setState(() => tree.adopted = true);
-                      _showToast('🌱 ${tree.name} adotada(o)! Sua floresta e ranking foram atualizados.');
-                    } catch (e) {
-                      _showToast('Erro ao adotar árvore. Tente novamente.');
-                    }
-                  },
+                  onAdopt: () => _showPaymentModal(context, tree),
                 );
               },
             ),
@@ -136,7 +231,8 @@ class _AdoptScreenState extends State<AdoptScreen> {
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(),
                     child: Container(
-                      width: 38, height: 38,
+                      width: 38,
+                      height: 38,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: Colors.white.withOpacity(0.15),
@@ -184,7 +280,8 @@ class _AdoptScreenState extends State<AdoptScreen> {
                         child: Text(
                           f['label']!,
                           style: TextStyle(
-                            fontSize: 11, fontWeight: FontWeight.w600,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
                             color: active ? Colors.white : Colors.white.withOpacity(0.7),
                           ),
                         ),
@@ -234,7 +331,8 @@ class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderSta
   Widget build(BuildContext context) {
     return Positioned(
       bottom: 100,
-      left: 20, right: 20,
+      left: 20,
+      right: 20,
       child: Material(
         color: Colors.transparent,
         child: FadeTransition(
@@ -246,7 +344,9 @@ class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderSta
               decoration: BoxDecoration(
                 color: AppColors.greenLight,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: AppColors.greenLight.withOpacity(0.5), blurRadius: 30)],
+                boxShadow: [
+                  BoxShadow(color: AppColors.greenLight.withOpacity(0.5), blurRadius: 30),
+                ],
               ),
               child: Text(
                 widget.message,

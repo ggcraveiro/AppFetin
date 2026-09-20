@@ -13,47 +13,41 @@ class AuthService {
 
   // Cadastro de novo usuário
 Future<String?> signUp({
-    required String name,
-    required String email,
-    required String password,
-  }) async {
-    try {
-      // 1. Cria a credencial
-      UserCredential credential = await _auth.createUserWithEmailAndPassword(
-        email: email.trim(),
-        password: password.trim(),
-      );
+  required String name,
+  required String email,
+  required String password,
+}) async {
+  try {
+    // 1. Cria a conta no Firebase Authentication
+    UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+      email: email.trim(),
+      password: password.trim(),
+    );
 
-      final user = credential.user;
-      if (user == null) return 'Erro ao criar credencial de usuário.';
+    // 2. Garante que o usuário foi criado e possui um UID
+    if (userCredential.user != null) {
+      String uid = userCredential.user!.uid;
 
-      // 2. Atualiza o perfil no Auth
-      await user.updateDisplayName(name.trim());
-
-      // 3. Aguarda explicitamente a gravação no Firestore
-      await _firestore.collection('users').doc(user.uid).set({
-        'uid': user.uid,
+      // 3. Salva os dados na coleção 'users' com o ID correspondente ao UID do Auth
+      await _firestore.collection('users').doc(uid).set({
         'name': name.trim(),
         'email': email.trim(),
         'createdAt': FieldValue.serverTimestamp(),
-        'treesPlanted': 0,
-        'streak': 0,
-        'maxStreak': 0,
-        'score': 0,
-      }, SetOptions(merge: true)); // Garantia de merge caso o documento exista
-
-      return null; // Sucesso garantido
-    } on FirebaseAuthException catch (e) {
-      return _handleAuthException(e);
-    } on FirebaseException catch (e) {
-      // Pega erros específicos do Firestore (ex: offline, permissão)
-      print('Erro no Firestore: ${e.code} - ${e.message}');
-      return 'Erro ao salvar perfil no banco de dados: ${e.message}';
-    } catch (e) {
-      print('Erro geral: $e');
-      return 'Ocorreu um erro inesperado ao criar a conta.';
+        'treesCount': 0,
+      });
+      
+      print("✅ Usuário salvo com sucesso no Firestore!");
+      return null; // Sucesso
     }
+    return "Erro ao obter o usuário cadastrado.";
+  } on FirebaseAuthException catch (e) {
+    print("❌ Erro no Auth: ${e.code}");
+    return _handleAuthException(e);
+  } catch (e) {
+    print("❌ Erro ao salvar dados no Firestore: $e");
+    return "Conta criada no Auth, mas falhou ao salvar dados do perfil. Tente novamente.";
   }
+}
 
   // Autenticação de usuário existente (Aceita E-mail ou Nome de Usuário)
 Future<String?> signIn({

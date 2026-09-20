@@ -18,6 +18,7 @@ dependencies:
   google_maps_flutter: ^2.18.0
   latlong2: ^0.10.1
   shared_preferences: ^2.2.2
+  url_launcher: ^6.2.0
 
 flutter:
   uses-material-design: true
@@ -26,3 +27,4 @@ flutter:
     - assets/images/govMunSantaRitadoSapucai.jpg
     - assets/images/govEstMinasGerais.png
     - assets/images/govNacional.png
+    - assets/images/mataAtlanticaImage.jpg

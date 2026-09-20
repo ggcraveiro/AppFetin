@@ -14,6 +14,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'incentives_screen.dart';
 import 'map_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatefulWidget {
   final String userName;
@@ -261,12 +262,10 @@ late AnimationController _heroCtrl;
       ],
     );
   }
-
-Widget _buildImpactCard() {
+  Widget _buildImpactCard() {
     final user = FirebaseAuth.instance.currentUser;
 
     return StreamBuilder<DocumentSnapshot>(
-      // Ouve em tempo real as mudanças no documento do usuário logado no Firestore
       stream: FirebaseFirestore.instance.collection('users').doc(user?.uid).snapshots(),
       builder: (context, userSnapshot) {
         int treesCount = 0;
@@ -284,32 +283,44 @@ Widget _buildImpactCard() {
               rankValue = '${rankSnapshot.data}º';
             }
 
-            return GestureDetector(
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const LeaderboardScreen()),
-                );
-              },
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(22),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(color: Colors.white.withOpacity(0.18)),
-                  ),
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
-                    children: [
-                      // Árvores adotadas dinâmicas
-                      _impactStat('🌳', '$treesCount', 'Árvores\nadotadas'),
-                      _impactDivider(),
-                      // Posição no ranking dinâmica
-                      _impactStat('📊', rankValue, 'posição\nno ranking'),
-                      _impactDivider(),
-                      _impactStat('🏔️', 'MG', 'Mata\nAtlântica'),
-                    ],
-                  ),
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(22),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: Colors.white.withOpacity(0.18)),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                child: Row(
+                  children: [
+                    // 1. Árvores adotadas
+                    _impactStat('🌳', '$treesCount', 'Árvores\nadotadas',
+                    onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const MapScreen()),
+                        );
+                      },
+                    ),
+                    _impactDivider(),
+                    
+                    // 2. Ranking (Abre o LeaderboardScreen)
+                    _impactStat(
+                      '📊', rankValue, 'posição\nno ranking',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const LeaderboardScreen()),
+                        );
+                      },
+                    ),
+                    _impactDivider(),
+
+                    // 3. Mata Atlântica (Abre o Modal do Bioma)
+                    _impactStat(
+                      '🏔️', 'MG', 'Mata\nAtlântica',
+                      onTap: () => _showBiomeInfoModal(context),
+                    ),
+                  ],
                 ),
               ),
             );
@@ -319,31 +330,212 @@ Widget _buildImpactCard() {
     );
   }
 
-  Widget _impactStat(String icon, String value, String label) {
+  Widget _impactStat(String icon, String value, String label, {VoidCallback? onTap}) {
     return Expanded(
-      child: Column(
-        children: [
-          Text(icon, style: const TextStyle(fontSize: 22)),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: GoogleFonts.playfairDisplay(
-              fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white,
-            ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(
+            children: [
+              Text(icon, style: const TextStyle(fontSize: 22)),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: GoogleFonts.playfairDisplay(
+                  fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 10, color: Colors.white.withOpacity(0.65), height: 1.3),
+              ),
+            ],
           ),
-          const SizedBox(height: 3),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 10, color: Colors.white.withOpacity(0.65), height: 1.3),
-          ),
-        ],
+        ),
       ),
     );
   }
-
   Widget _impactDivider() {
     return Container(width: 1, height: 44, color: Colors.white.withOpacity(0.2), margin: const EdgeInsets.symmetric(horizontal: 4));
+  }
+
+  void _showBiomeInfoModal(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          // Reduzimos o padding externo para o card ocupar mais espaço da tela
+          insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
+          child: Container(
+            // Aumentamos a largura máxima para dar mais amplitude em telas maiores
+            constraints: const BoxConstraints(maxWidth: 1160),
+            decoration: BoxDecoration(
+              color: AppColors.greenDark, // Fundo verde-escuro do card
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.4),
+                  blurRadius: 25,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(28.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // --- COLUNA DA ESQUERDA: IMAGEM + LEGENDA ---
+                      Expanded(
+                        flex: 5,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: AspectRatio(
+                                aspectRatio: 1,
+                                child: Image.asset(
+                                  'assets/images/mataAtlanticaImage.jpg', // Caminho relativo declarado no pubspec.yaml
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      color: Colors.white.withOpacity(0.08),
+                                      child: const Icon(Icons.forest, color: Colors.white38, size: 48),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              'Serra da Bocaina, na divisa dos estados de São Paulo e Rio de Janeiro',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.white.withOpacity(0.6),
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(width: 24),
+
+                      // --- COLUNA DA DIREITA: TÍTULO, INFORMAÇÕES E WIKIPÉDIA ---
+                      Expanded(
+                        flex: 6,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Mata Atlântica',
+                              style: GoogleFonts.playfairDisplay(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'A Mata Atlântica é o principal bioma da costa leste do Brasil, abrangendo principalmente '
+                              'os estados da região Sudeste e Sul. É aqui que ficam as bacias dos principais rios '
+                              'brasileiros, e uma biodiversidade gigantesca, com milhares de espécies. No estado de '
+                              'Minas Gerais, estão abrigados 70% dos mamíferos de todo o bioma, além de diversos tipos '
+                              'de vegetação. \n\nInfelizmente, a Mata Atlântica também é um dos biomas mais ameaçados '
+                              'do país, sendo que resta apenas 15,3% de toda sua cobertura original no território nacional. '
+                              'Em Minas, a situação é ainda mais crítica, com apenas 7% da cobertura original preservada. '
+                              'Os principais pontos de reservas são o Vale do Rio Doce, Vale do Jequitinhonha, e a região '
+                              'sul do estado, próxima à Serra da Mantiqueira. \n\nNos anos de 2021 e 2022, Minas foi o '
+                              'estado que mais desmatou árvores do bioma. Em um mundo cada vez mais ameaçado pelas mudanças '
+                              'climáticas (como o El Niño que irá atingir recordes históricos nos próximos meses), é '
+                              'essencial que o ecossistema seja preservado e reflorestado.',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.white.withOpacity(0.85),
+                                height: 1.5,
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            
+                            // Link para Wikipédia (Saber mais)
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // 1. Link para Wikipédia
+                                InkWell(
+                                  onTap: () async {
+                                    final Uri url = Uri.parse('https://pt.wikipedia.org/wiki/Mata_Atl%C3%A2ntica');
+                                    if (await canLaunchUrl(url)) {
+                                      await launchUrl(url, mode: LaunchMode.externalApplication);
+                                    }
+                                  },
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 4),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: const [
+                                        Text(
+                                          'Saiba mais sobre a Mata Atlântica (link externo)',
+                                          style: TextStyle(
+                                            color: AppColors.greenLight,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13,
+                                            decoration: TextDecoration.underline,
+                                          ),
+                                        ),
+                                        SizedBox(width: 6),
+                                        Icon(Icons.open_in_new, size: 14, color: AppColors.greenLight),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                
+                                const SizedBox(height: 8), // Espaçamento entre o link e as fontes
+
+                                // 2. Fontes em uma NOVA LINHA abaixo do link
+                                Text(
+                                  'Fontes: SOS Mata Atlântica, IBGE, Reserva da Biosfera da Mata Atlântica, G1',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.5),
+                                    fontSize: 11,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ],
+                            )
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Botão fechar (X)
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white70, size: 22),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildBody() {
@@ -369,13 +561,7 @@ Widget _buildChips() {
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance.collection('users').doc(user?.uid).snapshots(),
       builder: (context, snapshot) {
-        int streak = 0;
-        
-        if (snapshot.hasData && snapshot.data!.exists) {
-          final data = snapshot.data!.data() as Map<String, dynamic>;
-          streak = data['streak'] ?? 0; // Puxa a sequência salva no Firestore
-        }
-
+  
         return FutureBuilder<int>(
           future: LeaderboardService().getCurrentUserRank(),
           builder: (context, rankSnapshot) {
@@ -388,9 +574,6 @@ Widget _buildChips() {
                 children: [
                   // Chip de Rank dinâmico
                   _chip('🏆 Rank #${rank > 0 ? rank : '-'}', AppColors.gold),
-                  const SizedBox(width: 8),
-                  // Chip de Sequência dinâmico
-                  _chip('🔥 $streak dias seguidos', AppColors.coral),
                 ],
               ),
             );
@@ -484,7 +667,7 @@ Widget _buildTreeScroll() {
             separatorBuilder: (_, __) => const SizedBox(width: 14),
             itemBuilder: (_, i) {
               final treeData = treeDocs[i].data() as Map<String, dynamic>;
-              final tree = TreeModel.fromMap(treeData);
+              final tree = TreeModel.fromFirestore(treeDocs[i]);
 
               return MyTreeCard(
                 tree: tree, 
@@ -525,7 +708,7 @@ Widget _buildTreeScroll() {
                   Text('Adotar uma Árvore',
                     style: GoogleFonts.playfairDisplay(fontSize: 18, color: Colors.white)),
                   const SizedBox(height: 2),
-                  Text('8 espécies nativas do Vale do Sapucaí',
+                  Text('Espécies nativas do Vale do Sapucaí',
                     style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.6))),
                 ],
               ),
