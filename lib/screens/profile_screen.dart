@@ -3,6 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../colors.dart';
 import '../main.dart'; // Necessário para acessar o SplashRouter
+import 'dart:math';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String userName;
@@ -18,58 +21,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // Função para deslogar do aplicativo
   Future<void> _logout() async {
-    // Acessa o armazenamento local
     final prefs = await SharedPreferences.getInstance();
-    
-    // Remove o nome salvo para que o app exija login novamente
     await prefs.remove('raizes_name');
+    
+    // Desloga do Firebase também para resetar a sessão
+    await FirebaseAuth.instance.signOut();
     
     if (!mounted) return;
     
-    // pushAndRemoveUntil limpa todo o histórico de navegação para que o 
-    // usuário não possa voltar ao perfil clicando no botão "voltar" do celular
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const SplashRouter()),
       (route) => false,
     );
   }
 
-  // Função para deletar a conta (com confirmação)
+  // Função para acionar o fluxo de confirmação com PIN e exclusão
   void _deleteAccount() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1b4332),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Deletar Conta', 
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        content: const Text(
-          'Tem certeza que deseja deletar sua conta permanentemente? Esta ação não pode ser desfeita.', 
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(), // Apenas fecha o aviso
-            child: const Text('Cancelar', style: TextStyle(color: AppColors.greenLight)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              // Por enquanto, deletar a conta faz o mesmo que o logout.
-              // Futuramente você pode adicionar a lógica de apagar do banco de dados aqui.
-              _logout(); 
-            },
-            child: const Text('Deletar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
+    _confirmAndDeleteAccount(context);
   }
 
   @override
@@ -106,7 +74,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildProfileAvatar(),
             const SizedBox(height: 16),
             _buildUserInfo(),
-            const SizedBox(height: 48), // Espaço extra antes da área de perigo
+            const SizedBox(height: 48),
             _buildActionOptions(),
           ],
         ),
@@ -188,7 +156,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Área com os botões de controle da conta
   Widget _buildActionOptions() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,13 +175,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _buildListTile(
           icon: Icons.manage_accounts, 
           title: 'Alterar nome de usuário', 
-          onTap: _logout,
+          onTap: () {},
         ),
         const SizedBox(height: 12),
         _buildListTile(
           icon: Icons.sync_lock, 
           title: 'Alterar senha', 
-          onTap: _logout,
+          onTap: () {},
         ),
         const SizedBox(height: 12),
         _buildListTile(
@@ -233,7 +200,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Componente reutilizável para os botões do final
   Widget _buildListTile({
     required IconData icon, 
     required String title, 
@@ -260,6 +226,172 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         onTap: onTap,
       ),
+    );
+  }
+}
+
+Future<void> _confirmAndDeleteAccount(BuildContext context) async {
+  final String pinCode = (1000 + Random().nextInt(9000)).toString();
+  final TextEditingController inputController = TextEditingController();
+  bool isCodeCorrect = false;
+
+  await showDialog(
+    context: context,
+    builder: (dialogCtx) {
+      return StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return AlertDialog(
+            backgroundColor: AppColors.greenDark,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text(
+              'Excluir Conta?',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Esta ação é irreversível e apagará todos os seus dados e árvores adotadas.',
+                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Para confirmar, digite o código abaixo:',
+                  style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13),
+                ),
+                const SizedBox(height: 8),
+                
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.black26,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.greenLight.withOpacity(0.4)),
+                  ),
+                  child: Center(
+                    child: Text(
+                      pinCode,
+                      style: const TextStyle(
+                        color: AppColors.gold,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 6,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                TextField(
+                  controller: inputController,
+                  keyboardType: TextInputType.number,
+                  maxLength: 4,
+                  style: const TextStyle(color: Colors.white, fontSize: 18, letterSpacing: 4),
+                  textAlign: TextAlign.center,
+                  decoration: InputDecoration(
+                    counterText: '',
+                    hintText: '----',
+                    hintStyle: const TextStyle(color: Colors.white30, letterSpacing: 4),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.08),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  onChanged: (val) {
+                    setStateDialog(() {
+                      isCodeCorrect = (val.trim() == pinCode);
+                    });
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogCtx),
+                child: const Text('Cancelar', style: TextStyle(color: Colors.white60)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  disabledBackgroundColor: Colors.redAccent.withOpacity(0.3),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                onPressed: isCodeCorrect
+                    ? () async {
+                        Navigator.pop(dialogCtx);
+                        await _deleteUserDataAndAccount(context);
+                      }
+                    : null,
+                child: const Text('Excluir Definitivamente', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
+Future<void> _deleteUserDataAndAccount(BuildContext context) async {
+  final user = FirebaseAuth.instance.currentUser;
+
+  // Exibe o carregamento
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => const Center(child: CircularProgressIndicator(color: AppColors.greenLight)),
+  );
+
+  try {
+    if (user != null) {
+      final uid = user.uid;
+
+      // 1. Apaga subcoleção de árvores do Firestore
+      final treesDocs = await FirebaseFirestore.instance.collection('users').doc(uid).collection('trees').get();
+      for (var doc in treesDocs.docs) {
+        await doc.reference.delete();
+      }
+
+      // 2. Apaga o documento principal do usuário no Firestore
+      await FirebaseFirestore.instance.collection('users').doc(uid).delete();
+
+      // 3. Deleta do Firebase Auth
+      await user.delete();
+    }
+
+    // 4. Limpa preferências locais
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('raizes_name');
+
+    if (context.mounted) {
+      // ⚠️ IMPORTANTE: Pop para fechar o modal de CircularProgressIndicator antes de navegar
+      Navigator.of(context).pop(); 
+
+      // Navega limpando todo o histórico para o Splash/Login
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const SplashRouter()),
+        (route) => false,
+      );
+    }
+  } on FirebaseAuthException catch (e) {
+    if (context.mounted) Navigator.of(context).pop(); // Fecha o loading em caso de erro
+
+    if (e.code == 'requires-recent-login') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por segurança, faça login novamente antes de excluir a conta.')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao apagar conta: ${e.message}')),
+      );
+    }
+  } catch (e) {
+    if (context.mounted) Navigator.of(context).pop(); // Fecha o loading em caso de erro
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Erro inesperado: $e')),
     );
   }
 }

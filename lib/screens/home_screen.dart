@@ -573,7 +573,7 @@ Widget _buildChips() {
               child: Row(
                 children: [
                   // Chip de Rank dinâmico
-                  _chip('🏆 Rank #${rank > 0 ? rank : '-'}', AppColors.gold),
+                  _chip('🏆 #${rank > 0 ? rank : '-'} no ranking', AppColors.gold),
                 ],
               ),
             );
@@ -784,7 +784,7 @@ Widget _buildTreeScroll() {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const MapScreen()),
                   );
-                } else if (item['label  '] == 'Incentivos') {
+                } else if (item['label'] == 'Incentivos') {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const IncentivesScreen()),
                   );
