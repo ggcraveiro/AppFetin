@@ -1,5 +1,5 @@
 # EcoMind
 
-Aplicativo que será apresentado na Feira Tecnológica do Inatel - FETIN em 24 de setembro.
+Aplicativo que será apresentado na Feira Tecnológica do Inatel - FETIN nos dias 24 a 26 de setembro.
 
-## Última atualização: 24 de agosto de 2026
+## Última atualização: 29 de agosto de 2026
