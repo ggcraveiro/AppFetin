@@ -4,6 +4,21 @@ import 'package:firebase_auth/firebase_auth.dart';
 class LeaderboardService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  // Stream para atualização em TEMPO REAL na tela de Ranking
+  Stream<List<Map<String, dynamic>>> getTopUsersStream() {
+    return _firestore
+        .collection('users')
+        .orderBy('treesPlanted', descending: true) // Ordena pelo número de árvores
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+    });
+  }
+
   // Busca o top 10 para a tela de ranking
   Future<List<Map<String, dynamic>>> getTopUsers() async {
     try {

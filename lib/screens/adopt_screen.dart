@@ -4,7 +4,8 @@ import '../colors.dart';
 import '../models/tree_model.dart';
 import '../widgets/adopt_tree_card.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';  
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/gestures.dart';
 
 class AdoptScreen extends StatefulWidget {
   const AdoptScreen({super.key});
@@ -19,17 +20,25 @@ class _AdoptScreenState extends State<AdoptScreen> {
 
   final List<Map<String, String>> _filters = [
     {'label': 'Todas', 'value': 'Todos'},
-    {'label': '🏞️ Mata Ciliar', 'value': 'Mata Ciliar'},
-    {'label': '🌳 Mata Atlântica', 'value': 'Mata Atlântica'},
-    {'label': '⛰️ Serra', 'value': 'Serra'},
-    {'label': '💧 Várzea', 'value': 'Várzea'},
     {'label': '🔴 Ameaçadas', 'value': 'Ameaçada'},
+    {'label': '🏞️ Mata ciliar', 'value': 'Mata ciliar'},
+    {'label': '🌼 Floração', 'value': 'Floração'},
+    {'label': '🐦 Atrai aves', 'value': 'Atrai aves'},
+    {'label': '🐆 Alimenta a fauna', 'value': 'Alimenta a fauna'},
+    {'label': '🌳 Grande porte', 'value': 'Grande porte'},
+    {'label': '🌱 Recupera o solo', 'value': 'Recupera o solo'},
+    {'label': '💨 Dispersão pelo vento', 'value': 'Dispersão pelo vento'},
+    {'label': '🍃 Fixação de nitrogênio', 'value': 'Fixação de nitrogênio'},
+    {'label': '🌰 Castanhas comestíveis', 'value': 'Castanhas comestíveis'},
+    {'label': '🥭 Frutos comestíveis', 'value': 'Frutos comestíveis'},
   ];
 
   List<AdoptTreeModel> get _filtered {
     if (_activeFilter == 'Todos') return adoptTrees;
     if (_activeFilter == 'Ameaçada') return adoptTrees.where((t) => t.isEndangered).toList();
-    return adoptTrees.where((t) => t.biome == _activeFilter).toList();
+    
+    // Verifica se a lista de 'tags' da árvore contém o filtro selecionado
+    return adoptTrees.where((t) => t.tags.contains(_activeFilter)).toList();
   }
 
   void _showToast(String msg) {
@@ -136,6 +145,12 @@ class _AdoptScreenState extends State<AdoptScreen> {
     }
 
     try {
+      // 1. Gera a variação aleatória baseada na coordenada original da árvore
+      final coords = MapLocationHelper.generateJitterCoordinates(
+        tree.latitude,
+        tree.longitude,
+      );
+
       final treeData = {
         'userId': user.uid,
         'name': tree.name,
@@ -146,24 +161,22 @@ class _AdoptScreenState extends State<AdoptScreen> {
         'progress': 0.1,
         'monthsPlanted': 1,
         'isEndangered': tree.isEndangered,
-        'latitude': tree.latitude,
-        'longitude': tree.longitude,
+        'latitude': coords[0], // Coordenada Única Gerada
+        'longitude': coords[1], // Coordenada Única Gerada
         'createdAt': FieldValue.serverTimestamp(),
       };
 
-      // 1. Salva na coleção global "trees"
+      // Restante do método mantido idêntico...
       final globalDocRef = await FirebaseFirestore.instance
           .collection('trees')
           .add(treeData);
 
-      // 2. Salva na subcoleção do usuário com o mesmo ID
       final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
       await userDocRef
           .collection('trees')
           .doc(globalDocRef.id)
           .set(treeData);
 
-      // 3. Atualiza os contadores de pontuação e árvores do usuário
       await FirebaseFirestore.instance.runTransaction((transaction) async {
         final snapshot = await transaction.get(userDocRef);
         if (snapshot.exists) {
@@ -247,7 +260,7 @@ class _AdoptScreenState extends State<AdoptScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Adotar Árvore 🌿',
+                        'Adotar Árvore',
                         style: GoogleFonts.playfairDisplay(fontSize: 22, color: Colors.white),
                       ),
                       Text(
@@ -259,37 +272,51 @@ class _AdoptScreenState extends State<AdoptScreen> {
                 ],
               ),
               const SizedBox(height: 18),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: _filters.map((f) {
-                    final active = _activeFilter == f['value'];
-                    return GestureDetector(
-                      onTap: () => setState(() => _activeFilter = f['value']!),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        margin: const EdgeInsets.only(right: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-                        decoration: BoxDecoration(
-                          color: active ? AppColors.greenLight : Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: active ? AppColors.greenLight : Colors.white.withOpacity(0.15),
-                          ),
-                        ),
-                        child: Text(
-                          f['label']!,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: active ? Colors.white : Colors.white.withOpacity(0.7),
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
+              ScrollConfiguration(
+                behavior: ScrollConfiguration.of(context).copyWith(
+                  // 👈 Habilita o arraste tanto para toque quanto para ponteiro de mouse
+                  dragDevices: {
+                    PointerDeviceKind.touch,
+                    PointerDeviceKind.mouse,
+                    PointerDeviceKind.trackpad,
+                  },
                 ),
-              ),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Row(
+                    children: _filters.map((f) {
+                      final active = _activeFilter == f['value'];
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(20),
+                          onTap: () => setState(() => _activeFilter = f['value']!),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: active ? AppColors.greenLight : Colors.white.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: active ? AppColors.greenLight : Colors.white.withOpacity(0.15),
+                              ),
+                            ),
+                            child: Text(
+                              f['label']!,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: active ? Colors.white : Colors.white.withOpacity(0.7),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              )
             ],
           ),
         ),

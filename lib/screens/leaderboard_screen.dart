@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/leaderboard_service.dart';
+import '../services/app_language.dart';
 
 class LeaderboardScreen extends StatelessWidget {
   const LeaderboardScreen({super.key});
@@ -16,12 +17,12 @@ class LeaderboardScreen extends StatelessWidget {
         elevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFF52b788)),
         title: Text(
-          'Ranking 🌿',
+          AppLanguage.get(context, 'rankingTitle'),
           style: GoogleFonts.playfairDisplay(color: Colors.white),
         ),
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: leaderboardService.getTopUsers(),
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: leaderboardService.getTopUsersStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -30,10 +31,10 @@ class LeaderboardScreen extends StatelessWidget {
           }
 
           if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
-                'Nenhum dado de ranking encontrado.',
-                style: TextStyle(color: Colors.white70),
+                AppLanguage.get(context, 'noRankingData'),
+                style: const TextStyle(color: Colors.white70),
               ),
             );
           }
@@ -45,7 +46,7 @@ class LeaderboardScreen extends StatelessWidget {
             itemCount: users.length,
             itemBuilder: (context, index) {
               final user = users[index];
-              final name = user['name'] ?? 'Anônimo';
+              final name = user['name'] ?? AppLanguage.get(context, 'anonymous');
               final trees = user['treesPlanted'] ?? 0;
               
               Color rankColor = const Color(0xFF1b4332);
@@ -85,7 +86,7 @@ class LeaderboardScreen extends StatelessWidget {
                       const Icon(Icons.eco, color: Color(0xFF52b788), size: 20),
                       const SizedBox(width: 6),
                       Text(
-                        '$trees árvores',
+                        '$trees ${AppLanguage.get(context, 'treesCountLabel')}',
                         style: const TextStyle(
                           color: Color(0xFF52b788),
                           fontWeight: FontWeight.bold,

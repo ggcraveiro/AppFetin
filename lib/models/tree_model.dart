@@ -1,4 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:math';
+
 
 class TreeModel {
   final String? id; // ID para deletar no Firestore
@@ -71,6 +73,33 @@ class TreeModel {
   }
 }
 
+// Helper para randomizar posições mantendo limites seguros
+class MapLocationHelper {
+  // Limites aproximados da região de Santa Rita do Sapucaí / Vale do Sapucaí
+  static const double minLat = -22.2700;
+  static const double maxLat = -22.2300;
+  static const double minLng = -45.7200;
+  static const double maxLng = -45.6800;
+
+  /// Adiciona uma variação aleatória de ~100m a ~500m na coordenada original
+  static List<double> generateJitterCoordinates(double baseLat, double baseLng) {
+    final random = Random();
+    
+    // Variação de aproximadamente ±0.004 graus (~400 metros)
+    double latOffset = (random.nextDouble() - 0.5) * 0.008;
+    double lngOffset = (random.nextDouble() - 0.5) * 0.008;
+
+    double newLat = baseLat + latOffset;
+    double newLng = baseLng + lngOffset;
+
+    // Garante que não ultrapassa os limites da cidade
+    newLat = newLat.clamp(minLat, maxLat);
+    newLng = newLng.clamp(minLng, maxLng);
+
+    return [newLat, newLng];
+  }
+}
+
 class AdoptTreeModel {
   final String name;
   final String species;
@@ -97,95 +126,72 @@ class AdoptTreeModel {
   });
 }
 
-// Lista de teste local mantida e atualizada com coordenadas
-final List<TreeModel> myTrees = [
-  const TreeModel(
-    name: 'Ipê Amarelo', species: 'Handroanthus chrysotrichus',
-    emoji: '🌸', biome: 'Serra', location: 'Rio Sapucaí · MG',
-    progress: 0.73, monthsPlanted: 8,
-    latitude: -22.2520, longitude: -45.7030,
-  ),
-  const TreeModel(
-    name: 'Sapucaia', species: 'Lecythis pisonis',
-    emoji: '🌰', biome: 'Mata Ciliar', location: 'Mata Ciliar · MG',
-    progress: 0.17, monthsPlanted: 14,
-    isEndangered: true, urgentDays: 5,
-    latitude: -22.2350, longitude: -45.6900,
-  ),
-  const TreeModel(
-    name: 'Cedro', species: 'Cedrela fissilis',
-    emoji: '🪵', biome: 'Serra', location: 'Serra Fina · MG',
-    progress: 0.90, monthsPlanted: 3,
-    latitude: -22.2600, longitude: -45.7100,
-  ),
-  const TreeModel(
-    name: 'Copaíba', species: 'Copaifera langsdorffii',
-    emoji: '🌿', biome: 'Mata Ciliar', location: 'Vale do Sapucaí · MG',
-    progress: 0.47, monthsPlanted: 11,
-    latitude: -22.2450, longitude: -45.6980,
-  ),
-];
-
 // Lista de adoção completa mantida com coordenadas no Vale do Sapucaí
 final List<AdoptTreeModel> adoptTrees = [
   AdoptTreeModel(
-    name: 'Sapucaia', species: 'Lecythis pisonis', emoji: '🌰',
-    biome: 'Mata Ciliar', tags: ['Mata Ciliar', 'Rio Sapucaí'],
-    priceMonthly: 22, isEndangered: true,
+    name: 'Ipê Amarelo', species: 'Handroanthus albus', emoji: '🟡',
+    biome: 'Mata Atlântica', tags: ['Floração', 'Atrai aves'],
+    priceMonthly: 22,
     latitude: -22.2510, longitude: -45.7050,
   ),
-  AdoptTreeModel(
-    name: 'Ipê Amarelo', species: 'Handroanthus chrysotrichus', emoji: '🌸',
-    biome: 'Serra', tags: ['Serra', 'Encosta', '~80 anos'],
-    priceMonthly: 18,
+  AdoptTreeModel( 
+    name: 'Jacarandá', species: 'Jacaranda spp.', emoji: '🪻',
+    biome: 'Mata Atlântica', tags: ['Floração', 'Alimenta a fauna'],
+    priceMonthly: 18, isEndangered: true,
     latitude: -22.2530, longitude: -45.7010,
   ),
   AdoptTreeModel(
-    name: 'Cedro', species: 'Cedrela fissilis', emoji: '🪵',
-    biome: 'Serra', tags: ['Serra', 'Floresta Montana'],
+    name: 'Cedro-rosa', species: 'Cedrela fissilis', emoji: '🪵',
+    biome: 'Mata Atlântica', tags: ['Grande porte', 'Dispersão pelo vento'],
     priceMonthly: 25, isEndangered: true,
     latitude: -22.2480, longitude: -45.7120,
   ),
   AdoptTreeModel(
-    name: 'Copaíba', species: 'Copaifera langsdorffii', emoji: '🌿',
-    biome: 'Mata Ciliar', tags: ['Mata Ciliar', 'Medicinal', '~400 anos'],
-    priceMonthly: 20,
+    name: 'Jequitibá-rosa', species: 'Cariniana legalis', emoji: '👑',
+    biome: 'Mata Atlântica', tags: ['Grande porte', 'Longevidade'],
+    priceMonthly: 20, isEndangered: true,
     latitude: -22.2560, longitude: -45.6970,
   ),
   AdoptTreeModel(
-    name: 'Canela-preta', species: 'Ocotea catharinensis', emoji: '🌲',
-    biome: 'Serra', tags: ['Serra', 'Floresta Densa'],
-    priceMonthly: 23, isEndangered: true,
+    name: 'Angico', species: 'Anadenanthera colubrina', emoji: '🌱',
+    biome: 'Mata Atlântica', tags: ['Recupera o solo', 'Fixação de nitrogênio'],
+    priceMonthly: 23,
     latitude: -22.2420, longitude: -45.7080,
   ),
   AdoptTreeModel(
-    name: 'Jequitibá Branco', species: 'Cariniana estrellensis', emoji: '🌳',
-    biome: 'Várzea', tags: ['Várzea', 'Gigante nativa'],
-    priceMonthly: 28, isEndangered: true,
+    name: 'Jatobá', species: 'Hymenaea courbaril', emoji: '🌳',
+    biome: 'Mata Atlântica', tags: ['Alimenta a fauna', 'Castanhas comestíveis', 'Resina medicinal'],
+    priceMonthly: 28,
     latitude: -22.2590, longitude: -45.7020,
   ),
   AdoptTreeModel(
-    name: 'Ipê Roxo', species: 'Handroanthus impetiginosus', emoji: '💜',
-    biome: 'Mata Ciliar', tags: ['Mata Ciliar', 'Encosta', '~60 anos'],
+    name: 'Canelas', species: 'Ocotea / Nectandra spp.', emoji: '🍃',
+    biome: 'Mata Atlântica', tags: ['Atrai aves', 'Folhagem aromática'],
     priceMonthly: 17,
     latitude: -22.2460, longitude: -45.6930,
   ),
   AdoptTreeModel(
-    name: 'Canafístula', species: 'Peltophorum dubium', emoji: '🌼',
-    biome: 'Várzea', tags: ['Várzea', 'Pioneira', 'Restauração'],
-    priceMonthly: 14,
+    name: 'Peroba-rosa', species: 'Aspidosperma polyneuron', emoji: '🌲',
+    biome: 'Mata Atlântica', tags: ['Dispersão pelo vento', 'Espécie clímax'],
+    priceMonthly: 14, isEndangered: true,
     latitude: -22.2545, longitude: -45.7150,
   ),
   AdoptTreeModel(
-    name: 'Pau-brasil', species: 'Paubrasilia echinata', emoji: '🪵',
-    biome: 'Mata Atlântica', tags: ['Mata Atlântica', 'Símbolo do Brasil'],
-    priceMonthly: 30, isEndangered: true,
+    name: 'Aroeira-pimenteira', species: 'Schinus terebinthifolia', emoji: '🌶️',
+    biome: 'Mata Atlântica', tags: ['Mata ciliar', 'Atrai aves', 'Frutos comestíveis'],
+    priceMonthly: 30,
     latitude: -22.2505, longitude: -45.6990,
   ),
   AdoptTreeModel(
-    name: 'Embaúba', species: 'Cecropia pachystachya', emoji: '🌿',
-    biome: 'Mata Atlântica', tags: ['Mata Atlântica', 'Pioneira', 'Restauração'],
+    name: 'Ingá', species: 'Inga spp.', emoji: '🌿',
+    biome: 'Mata Atlântica', tags: ['Mata ciliar', 'Alimenta a fauna', 'Fixação de nitrogênio'],
     priceMonthly: 13,
     latitude: -22.2575, longitude: -45.7065,
-  )
+  ),
+  AdoptTreeModel(
+    name: 'Sapucaia', species: 'Lecythis pisonis', emoji: '🌰',
+    biome: 'Mata Atlântica', tags: ['Castanhas comestíveis', 'Atrai aves', 'Floração'],
+    priceMonthly: 35,
+    latitude: -22.2495, longitude: -45.7100,
+  ),
 ];

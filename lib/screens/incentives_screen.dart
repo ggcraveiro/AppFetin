@@ -151,7 +151,7 @@ class _IncentivesScreenState extends State<IncentivesScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Incentivos e Recompensas 🎁',
+                        'Incentivos e Recompensas',
                         style: GoogleFonts.playfairDisplay(fontSize: 22, color: Colors.white),
                       ),
                       Text(

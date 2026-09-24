@@ -6,6 +6,7 @@ import '../main.dart'; // Necessário para acessar o SplashRouter
 import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/services.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String userName;
@@ -338,50 +339,56 @@ Future<void> _confirmAndDeleteAccount(BuildContext context) async {
 Future<void> _deleteUserDataAndAccount(BuildContext context) async {
   final user = FirebaseAuth.instance.currentUser;
 
-  // Exibe o carregamento
+  if (user == null) return;
+
+  // 1. Exibe o indicador de carregamento
   showDialog(
     context: context,
     barrierDismissible: false,
-    builder: (_) => const Center(child: CircularProgressIndicator(color: AppColors.greenLight)),
+    builder: (_) => const Center(
+      child: CircularProgressIndicator(color: AppColors.greenLight),
+    ),
   );
 
   try {
-    if (user != null) {
-      final uid = user.uid;
+    final uid = user.uid;
 
-      // 1. Apaga subcoleção de árvores do Firestore
-      final treesDocs = await FirebaseFirestore.instance.collection('users').doc(uid).collection('trees').get();
-      for (var doc in treesDocs.docs) {
-        await doc.reference.delete();
-      }
+    // 2. Apaga a subcoleção de árvores do Firestore
+    final treesDocs = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('trees')
+        .get();
 
-      // 2. Apaga o documento principal do usuário no Firestore
-      await FirebaseFirestore.instance.collection('users').doc(uid).delete();
-
-      // 3. Deleta do Firebase Auth
-      await user.delete();
+    for (var doc in treesDocs.docs) {
+      await doc.reference.delete();
     }
 
-    // 4. Limpa preferências locais
+    // 3. Apaga o documento principal do usuário no Firestore
+    await FirebaseFirestore.instance.collection('users').doc(uid).delete();
+
+    // 4. Limpa as preferências locais
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('raizes_name');
 
-    if (context.mounted) {
-      // ⚠️ IMPORTANTE: Pop para fechar o modal de CircularProgressIndicator antes de navegar
-      Navigator.of(context).pop(); 
+    // 5. Deleta a conta do Firebase Auth e encerra a sessão
+    await user.delete();
+    await FirebaseAuth.instance.signOut();
 
-      // Navega limpando todo o histórico para o Splash/Login
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const SplashRouter()),
-        (route) => false,
-      );
-    }
+    // 6. Encerra completamente o aplicativo
+    await SystemNavigator.pop();
+
   } on FirebaseAuthException catch (e) {
-    if (context.mounted) Navigator.of(context).pop(); // Fecha o loading em caso de erro
+    // Fecha o modal de carregamento caso ocorra um erro
+    if (context.mounted && Navigator.canPop(context)) {
+      Navigator.of(context).pop();
+    }
 
     if (e.code == 'requires-recent-login') {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por segurança, faça login novamente antes de excluir a conta.')),
+        const SnackBar(
+          content: Text('Por segurança, faça login novamente antes de excluir a conta.'),
+        ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -389,7 +396,9 @@ Future<void> _deleteUserDataAndAccount(BuildContext context) async {
       );
     }
   } catch (e) {
-    if (context.mounted) Navigator.of(context).pop(); // Fecha o loading em caso de erro
+    if (context.mounted && Navigator.canPop(context)) {
+      Navigator.of(context).pop();
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Erro inesperado: $e')),
     );

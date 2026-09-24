@@ -13,6 +13,9 @@ dependencies:
   firebase_core: ^4.13.0
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.2
   flutter_map: ^8.3.2
   google_fonts: ^6.1.0
   google_maps_flutter: ^2.18.0
@@ -20,8 +23,10 @@ dependencies:
   shared_preferences: ^2.2.2
   url_launcher: ^6.2.0
 
+
 flutter:
   uses-material-design: true
+  generate: true
 
   assets:
     - assets/images/govMunSantaRitadoSapucai.jpg

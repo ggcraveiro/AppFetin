@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../colors.dart';
 import '../models/tree_model.dart';
+import '../services/app_language.dart';
 
 class AdoptTreeCardWidget extends StatefulWidget {
   final AdoptTreeModel tree;
@@ -95,7 +96,7 @@ class _AdoptTreeCardWidgetState extends State<AdoptTreeCardWidget>
                         spacing: 5, runSpacing: 4,
                         children: [
                           ...widget.tree.tags.map((tag) => _tag(tag, false)),
-                          if (widget.tree.isEndangered) _tag('🔴 Ameaçada', true),
+                          if (widget.tree.isEndangered) _tag(AppLanguage.get(context, 'endangeredTag'), true),
                         ],
                       ),
                     ],
@@ -111,7 +112,7 @@ class _AdoptTreeCardWidgetState extends State<AdoptTreeCardWidget>
                       style: GoogleFonts.playfairDisplay(
                         fontSize: 15, color: AppColors.gold, fontWeight: FontWeight.w700),
                     ),
-                    Text('/mês', style: TextStyle(fontSize: 9, color: Colors.white.withOpacity(0.4))),
+                    Text(AppLanguage.get(context, 'perMonth'), style: TextStyle(fontSize: 9, color: Colors.white.withOpacity(0.4))),
                     const SizedBox(height: 7),
                     _AdoptButton(adopted: widget.tree.adopted, onTap: widget.onAdopt),
                   ],
@@ -191,7 +192,7 @@ class _AdoptButtonState extends State<_AdoptButton> with SingleTickerProviderSta
             borderRadius: BorderRadius.circular(11),
           ),
           child: Text(
-            widget.adopted ? '✓ Adotada!' : 'Adotar',
+            widget.adopted ? AppLanguage.get(context, 'adoptedStatus') : AppLanguage.get(context, 'adoptAction'),
             style: const TextStyle(
               color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700,
             ),

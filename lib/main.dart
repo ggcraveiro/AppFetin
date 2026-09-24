@@ -1,23 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
-
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'screens/home_screen.dart';
 import 'screens/account_screen.dart';
-import 'firebase_options.dart'; // Gerado automaticamente pelo FlutterFire
-import 'services/auth_service.dart'; // Importe o serviço de autenticação
+import 'firebase_options.dart';
+import 'services/auth_service.dart';
 
 void main() async {
-  // Garante que os bindings do Flutter estejam prontos antes de chamar o Firebase
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Inicializa a conexão com o projeto no servidor
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
-  runApp(const RaizesApp()); // Mantenha a chamada do seu app principal aqui
+  runApp(const RaizesApp());
 }
 
 class RaizesApp extends StatelessWidget {
@@ -28,6 +23,18 @@ class RaizesApp extends StatelessWidget {
     return MaterialApp(
       title: 'EcoMind',
       debugShowCheckedModeBanner: false,
+
+      // Delegados nativos para dar suporte às datas e componentes em Português e Espanhol
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('pt', 'BR'),
+        Locale('es', ''),
+      ],
+
       theme: ThemeData(
         useMaterial3: true,
         textTheme: GoogleFonts.dmSansTextTheme().apply(
@@ -44,6 +51,8 @@ class RaizesApp extends StatelessWidget {
   }
 }
 
+// ... Restante do código do seu SplashRouter e _NameDialog (permanecem iguais)
+
 class SplashRouter extends StatefulWidget {
   const SplashRouter({super.key});
 
@@ -55,29 +64,42 @@ class _SplashRouterState extends State<SplashRouter> {
   @override
   void initState() {
     super.initState();
-    _checkName();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAuthAndNavigate();
+    });
   }
 
-  Future<void> _checkName() async {
-    final prefs = await SharedPreferences.getInstance();
-    String? name = prefs.getString('raizes_name');
+  Future<void> _checkAuthAndNavigate() async {
+    final authService = AuthService();
     
-    if (!mounted) return;
-    
-    if (name == null || name.isEmpty) {
-      final result = await showDialog<String>(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const _NameDialog(),
-      );
-      name = result ?? 'Visitante';
-      await prefs.setString('raizes_name', name);
+    if (authService.currentUser != null) {
+      _navigateToHome();
+      return;
     }
-    
+
     if (!mounted) return;
     
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const _NameDialog(),
+    );
+
+    if (!mounted) return;
+
+    if (authService.currentUser != null) {
+      _navigateToHome();
+    } else {
+      _checkAuthAndNavigate();
+    }
+  }
+
+  void _navigateToHome() {
+    final authService = AuthService();
+    final name = authService.currentUser?.displayName ?? 'Usuário EcoMind';
+
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => HomeScreen(userName: name!)),
+      MaterialPageRoute(builder: (_) => HomeScreen(userName: name)),
     );
   }
 
@@ -102,7 +124,6 @@ class _NameDialog extends StatefulWidget {
 }
 
 class _NameDialogState extends State<_NameDialog> {
-  // Crie dois controllers separados
   final _nameCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
 
@@ -127,9 +148,8 @@ class _NameDialogState extends State<_NameDialog> {
           fontSize: 18,
         ),
       ),
-      // Use Column para adicionar múltiplos campos de texto
       content: Column(
-        mainAxisSize: MainAxisSize.min, // Impede que a coluna ocupe a tela toda
+        mainAxisSize: MainAxisSize.min,
         children: [
           TextField(
             controller: _nameCtrl,
@@ -147,12 +167,12 @@ class _NameDialogState extends State<_NameDialog> {
                 borderSide: const BorderSide(color: Color(0xFF52b788), width: 2),
               ),
             ),
-            textInputAction: TextInputAction.next, // Botão "Avançar" no teclado
+            textInputAction: TextInputAction.next,
           ),
-          const SizedBox(height: 16), // Espaçamento entre as caixas de texto
+          const SizedBox(height: 16),
           TextField(
             controller: _passCtrl,
-            obscureText: true, // Oculta a senha digitada
+            obscureText: true,
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: 'Senha',
@@ -166,13 +186,12 @@ class _NameDialogState extends State<_NameDialog> {
                 borderSide: const BorderSide(color: Color(0xFF52b788), width: 2),
               ),
             ),
-            onSubmitted: (_) => _submit(), // Confirma ao dar "Enter" na senha
+            onSubmitted: (_) => _submit(),
           ),
         ],
       ),
-      actionsAlignment: MainAxisAlignment.spaceBetween, // Espalha os botões nas laterais
+      actionsAlignment: MainAxisAlignment.spaceBetween,
       actions: [
-        // Botão para criar nova conta
         TextButton(
           onPressed: _createAccount,
           child: const Text(
@@ -180,21 +199,17 @@ class _NameDialogState extends State<_NameDialog> {
             style: TextStyle(color: Colors.white70),
           ),
         ),
-        
-        // Botão principal para Entrar
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF52b788), // Cor de destaque verde
-            foregroundColor: const Color(0xFF081c15), // Cor do texto (fundo escuro do app)
+            backgroundColor: const Color(0xFF52b788),
+            foregroundColor: const Color(0xFF081c15),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
           ),
           onPressed: () async {
-            // Instancia o serviço que criamos no auth_service.dart
             final authService = AuthService();
 
-            // Como é um diálogo de entrada (login), vamos usar o método signIn
             final String? errorMessage = await authService.signIn(
               identifier: _nameCtrl.text,
               password: _passCtrl.text,
@@ -202,7 +217,6 @@ class _NameDialogState extends State<_NameDialog> {
 
             if (!context.mounted) return;
 
-            // Se retornou mensagem, exibe o erro
             if (errorMessage != null) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -211,8 +225,6 @@ class _NameDialogState extends State<_NameDialog> {
                 ),
               );
             } else {
-              // Se deu tudo certo, fecha o diálogo passando o e-mail/nome do usuário
-              // para a tela principal (SplashRouter)
               Navigator.of(context).pop(
                 _nameCtrl.text.trim().isEmpty ? 'Usuário' : _nameCtrl.text.trim(),
               );
@@ -228,7 +240,6 @@ class _NameDialogState extends State<_NameDialog> {
   }
 
   void _submit() async {
-    // Mesma lógica de autenticação do ElevatedButton para quem aperta "Enter" no teclado
     final authService = AuthService();
     final String? errorMessage = await authService.signIn(
       identifier: _nameCtrl.text,
@@ -251,8 +262,8 @@ class _NameDialogState extends State<_NameDialog> {
     }
   }
 
-  void _createAccount() {
-    Navigator.of(context).push(
+  void _createAccount() async {
+    final createdSuccess = await Navigator.of(context).push<bool>(
       PageRouteBuilder(
         pageBuilder: (_, anim, __) => const AccountScreen(),
         transitionsBuilder: (_, anim, __, child) {
@@ -269,6 +280,9 @@ class _NameDialogState extends State<_NameDialog> {
         transitionDuration: const Duration(milliseconds: 350),
       ),
     );
+
+    if (createdSuccess == true && mounted) {
+      Navigator.of(context).pop('Sucesso');
+    }
   }
 }
-

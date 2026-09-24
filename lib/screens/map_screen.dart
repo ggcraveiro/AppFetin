@@ -3,9 +3,10 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import para identificar o usuário logado
+import 'package:firebase_auth/firebase_auth.dart';
 import '../colors.dart';
 import '../models/tree_model.dart';
+import '../services/app_language.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -27,7 +28,7 @@ class _MapScreenState extends State<MapScreen> {
         backgroundColor: AppColors.greenDark,
         elevation: 0,
         title: Text(
-          'Mapa de Reflorestamento 🗺️',
+          AppLanguage.get(context, 'mapTitle'),
           style: GoogleFonts.playfairDisplay(fontSize: 20, color: Colors.white),
         ),
         leading: IconButton(
@@ -35,7 +36,6 @@ class _MapScreenState extends State<MapScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      // Escuta todas as árvores registradas na coleção global "trees"
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('trees').snapshots(),
         builder: (context, snapshot) {
@@ -44,7 +44,7 @@ class _MapScreenState extends State<MapScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
-                  'Erro ao carregar o mapa: ${snapshot.error}',
+                  '${AppLanguage.get(context, 'mapLoadError')} ${snapshot.error}',
                   style: const TextStyle(color: Colors.white70),
                   textAlign: TextAlign.center,
                 ),
@@ -61,7 +61,6 @@ class _MapScreenState extends State<MapScreen> {
           final docs = snapshot.data?.docs ?? [];
           final trees = docs.map((doc) => TreeModel.fromFirestore(doc)).toList();
 
-          // Cria os marcadores destacando os que pertencem ao usuário atual
           final markers = trees.map((tree) {
             final isMyTree = currentUserId != null && tree.userid == currentUserId;
             return _buildMarker(tree, isMyTree: isMyTree);
@@ -85,7 +84,6 @@ class _MapScreenState extends State<MapScreen> {
                 ],
               ),
 
-              // Card Informativo Flutuante no Topo
               Positioned(
                 top: 16,
                 left: 16,
@@ -108,16 +106,16 @@ class _MapScreenState extends State<MapScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Santa Rita do Sapucaí - MG',
-                                  style: TextStyle(
+                                Text(
+                                  AppLanguage.get(context, 'mapLocationHeader'),
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
                                   ),
                                 ),
                                 Text(
-                                  '${trees.length} árvores mapeadas ($myTreesCount suas).',
+                                  '${trees.length} ${AppLanguage.get(context, 'mapTreesMapped')} ($myTreesCount ${AppLanguage.get(context, 'mapYourTreesCount')}).',
                                   style: const TextStyle(color: Colors.white70, fontSize: 11),
                                 ),
                               ],
@@ -128,12 +126,11 @@ class _MapScreenState extends State<MapScreen> {
                       const SizedBox(height: 8),
                       const Divider(color: Colors.white12, height: 1),
                       const SizedBox(height: 8),
-                      // Legenda do Mapa
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildLegendItem(AppColors.gold, 'Suas árvores ⭐'),
-                          _buildLegendItem(AppColors.greenMid, 'Comunidade 🌳'),
+                          _buildLegendItem(AppColors.gold, AppLanguage.get(context, 'legendMyTrees')),
+                          _buildLegendItem(AppColors.greenMid, AppLanguage.get(context, 'legendCommunity')),
                         ],
                       ),
                     ],
@@ -161,7 +158,6 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  // Marcador customizado baseado na propriedade 'isMyTree'
   Marker _buildMarker(TreeModel tree, {required bool isMyTree}) {
     final markerColor = isMyTree ? AppColors.gold : AppColors.greenMid;
     final borderColor = isMyTree ? Colors.amberAccent : Colors.white;
@@ -195,7 +191,6 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
             ),
-            // Indicador de estrela para árvores do próprio usuário
             if (isMyTree)
               Positioned(
                 top: 0,
@@ -258,9 +253,9 @@ class _MapScreenState extends State<MapScreen> {
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(color: AppColors.gold),
                                 ),
-                                child: const Text(
-                                  'Sua Árvore',
-                                  style: TextStyle(color: AppColors.gold, fontSize: 10, fontWeight: FontWeight.bold),
+                                child: Text(
+                                  AppLanguage.get(context, 'yourTreeBadge'),
+                                  style: const TextStyle(color: AppColors.gold, fontSize: 10, fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ],
@@ -282,13 +277,12 @@ class _MapScreenState extends State<MapScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Bioma: ${tree.biome}', style: const TextStyle(color: Colors.white70)),
-                  Text('Local: ${tree.location}', style: const TextStyle(color: Colors.white70)),
+                  Text('${AppLanguage.get(context, 'biomeLabel')}: ${tree.biome}', style: const TextStyle(color: Colors.white70)),
+                  Text('${AppLanguage.get(context, 'locationLabel')}: ${tree.location}', style: const TextStyle(color: Colors.white70)),
                 ],
               ),
               const SizedBox(height: 16),
 
-              // Exibe o botão de exclusão apenas se a árvore for do próprio usuário
               if (isMyTree && tree.id != null) ...[
                 SizedBox(
                   width: double.infinity,
@@ -301,50 +295,47 @@ class _MapScreenState extends State<MapScreen> {
                       ),
                     ),
                     icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                    label: const Text(
-                      'Remover Árvore',
-                      style: TextStyle(color: Colors.redAccent),
+                    label: Text(
+                      AppLanguage.get(context, 'removeTreeBtn'),
+                      style: const TextStyle(color: Colors.redAccent),
                     ),
                     onPressed: () async {
                       final uid = FirebaseAuth.instance.currentUser?.uid;
                       if (uid == null || tree.id == null) return;
 
                       try {
-                        // 1. Deleta da coleção global do mapa
                         await FirebaseFirestore.instance
                           .collection('trees')
                           .doc(tree.id)
                           .delete();
 
-                         // 2. Deleta da subcoleção do usuário na Home
                         await FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(uid)
-                        .collection('trees')
-                        .doc(tree.id)
-                        .delete();
+                          .collection('users')
+                          .doc(uid)
+                          .collection('trees')
+                          .doc(tree.id)
+                          .delete();
 
-                        // 3. Atualiza o contador de árvores do perfil do usuário (-1)
                         await FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(uid)
-                        .update({
-                          'treesPlanted': FieldValue.increment(-1),
-                        });
+                          .collection('users')
+                          .doc(uid)
+                          .update({
+                            'treesPlanted': FieldValue.increment(-1),
+                          });
 
                         if (!mounted) return;
                         Navigator.pop(ctx);
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('${tree.name} foi removida com sucesso!'),
+                            content: Text('${tree.name} ${AppLanguage.get(context, 'treeRemovedSuccess')}'),
                             backgroundColor: Colors.redAccent,
                           ),
                         );
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Erro ao remover árvore: $e'),
+                            content: Text('${AppLanguage.get(context, 'treeRemoveError')} $e'),
                             backgroundColor: Colors.redAccent,
                           ),
                         );
