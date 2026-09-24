@@ -112,7 +112,6 @@ class _AdoptTreeCardWidgetState extends State<AdoptTreeCardWidget>
                       style: GoogleFonts.playfairDisplay(
                         fontSize: 15, color: AppColors.gold, fontWeight: FontWeight.w700),
                     ),
-                    Text(AppLanguage.get(context, 'perMonth'), style: TextStyle(fontSize: 9, color: Colors.white.withOpacity(0.4))),
                     const SizedBox(height: 7),
                     _AdoptButton(adopted: widget.tree.adopted, onTap: widget.onAdopt),
                   ],

@@ -33,3 +33,11 @@ flutter:
     - assets/images/govEstMinasGerais.png
     - assets/images/govNacional.png
     - assets/images/mataAtlanticaImage.jpg
+
+dev_dependencies:
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo.png"

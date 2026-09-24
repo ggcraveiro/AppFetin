@@ -73,7 +73,7 @@ class _AdoptScreenState extends State<AdoptScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Confirmar Adoção 🌿',
+                    'Confirmar Adoção',
                     style: GoogleFonts.playfairDisplay(
                       fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white,
                     ),
@@ -85,7 +85,7 @@ class _AdoptScreenState extends State<AdoptScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Valor mensal: R\$ ${tree.priceMonthly.toStringAsFixed(2)}',
+                    'Valor: R\$ ${tree.priceMonthly.toStringAsFixed(2)}',
                     style: const TextStyle(color: AppColors.greenLight, fontWeight: FontWeight.bold, fontSize: 15),
                   ),
                   const SizedBox(height: 20),
@@ -96,7 +96,7 @@ class _AdoptScreenState extends State<AdoptScreen> {
                     value: 'pix',
                     groupValue: selectedMethod,
                     activeColor: AppColors.greenLight,
-                    title: const Text('PIX (Aprovação Instantânea)', style: TextStyle(color: Colors.white, fontSize: 13)),
+                    title: const Text('PIX', style: TextStyle(color: Colors.white, fontSize: 13)),
                     secondary: const Text('⚡', style: TextStyle(fontSize: 18)),
                     onChanged: (val) => setModalState(() => selectedMethod = val!),
                   ),
@@ -105,7 +105,7 @@ class _AdoptScreenState extends State<AdoptScreen> {
                     value: 'card',
                     groupValue: selectedMethod,
                     activeColor: AppColors.greenLight,
-                    title: const Text('Cartão de Crédito Simulado', style: TextStyle(color: Colors.white, fontSize: 13)),
+                    title: const Text('Cartão de Crédito', style: TextStyle(color: Colors.white, fontSize: 13)),
                     secondary: const Text('💳', style: TextStyle(fontSize: 18)),
                     onChanged: (val) => setModalState(() => selectedMethod = val!),
                   ),
@@ -274,7 +274,6 @@ class _AdoptScreenState extends State<AdoptScreen> {
               const SizedBox(height: 18),
               ScrollConfiguration(
                 behavior: ScrollConfiguration.of(context).copyWith(
-                  // 👈 Habilita o arraste tanto para toque quanto para ponteiro de mouse
                   dragDevices: {
                     PointerDeviceKind.touch,
                     PointerDeviceKind.mouse,

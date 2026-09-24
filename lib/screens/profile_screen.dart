@@ -147,7 +147,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         const SizedBox(height: 6),
         Text(
-          'Membro desde Agosto, 2026',
+          'Membro desde setembro de 2026',
           style: TextStyle(
             fontSize: 14,
             color: Colors.white.withOpacity(0.6),

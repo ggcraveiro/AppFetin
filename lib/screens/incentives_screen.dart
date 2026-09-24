@@ -25,9 +25,9 @@ class IncentiveModel {
 // Lista inicial de incentivos por metas de árvores
 final List<IncentiveModel> sampleIncentives = [
   IncentiveModel(
-    title: 'Benefício A',
+    title: 'Benefício A ',
     partner: 'Prefeitura Municipal de Santa Rita do Sapucaí',
-    imagePath: 'assets/images/govMunSantaRitadoSapucai.jpg',
+    imagePath: 'none',
     category: 'Benefício Fiscal',
     requiredTrees: 1,
     description: 'Ainda não há uma descrição.',
@@ -35,7 +35,7 @@ final List<IncentiveModel> sampleIncentives = [
   IncentiveModel(
     title: 'Benefício B',
     partner: 'Governo do Estado de Minas Gerais',
-    imagePath: 'assets/images/govEstMinasGerai.png',
+    imagePath: 'none',
     category: 'Benefício Fiscal',
     requiredTrees: 4,
     description: 'Ainda não há uma descrição.',
@@ -43,7 +43,7 @@ final List<IncentiveModel> sampleIncentives = [
   IncentiveModel(
     title: 'Benefício C',
     partner: 'Governo do Estado de Minas Gerais',
-    imagePath: 'assets/images/govEstMinasGerais.png',
+    imagePath: 'none',
     category: 'Benefício Fiscal',
     requiredTrees: 6,
     description: 'Ainda não há uma descrição.',
@@ -51,7 +51,7 @@ final List<IncentiveModel> sampleIncentives = [
   IncentiveModel(
     title: 'Benefício D',
     partner: 'Governo Federal',
-    imagePath: 'assets/images/govNacional.png',
+    imagePath: 'none',
     category: 'Benefício Fiscal',
     requiredTrees: 9,
     description: 'Ainda não há uma descrição.',
@@ -155,7 +155,7 @@ class _IncentivesScreenState extends State<IncentivesScreen> {
                         style: GoogleFonts.playfairDisplay(fontSize: 22, color: Colors.white),
                       ),
                       Text(
-                        'Adote árvores e libere benefícios exclusivos',
+                        'Atenção: nenhum incentivo aqui é oficial por enquanto',
                         style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.55)),
                       ),
                     ],
